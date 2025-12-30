@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Florida Asset Protection Calculator | pacheco.one</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1e3a5f;
+            --primary-dark: #152840;
+            --accent-safe: #2d5f3f;
+            --accent-risk: #8b3a3a;
+            --gold: #c5a572;
+            --text: #1a1a1a;
+            --text-light: #666;
+            --background: #f5f3ef;
+            --card: #ffffff;
+            --border: #d4cfc4;
+            --safe-bg: #e8f4ed;
+            --risk-bg: #f9e8e8;
+        }
+
+        body {
+            font-family: 'Work Sans', -apple-system, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        nav {
+            background: var(--card);
+            border-bottom: 2px solid var(--gold);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Crimson Pro', serif;
+            font-size: 26px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .back-link {
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: color 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,0.03) 35px, rgba(255,255,255,0.03) 70px);
+            animation: slide 60s linear infinite;
+        }
+
+        @keyframes slide {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(70px); }
+        }
+
+        .header-content {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 48px;
+            margin-bottom: 15px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .header .subtitle {
+            font-size: 20px;
+            opacity: 0.95;
+            margin-bottom: 10px;
+        }
+
+        .header .location {
+            font-size: 14px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: -40px auto 60px;
+            padding: 0 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Info Banner */
+        .info-banner {
+            background: var(--card);
+            border: 2px solid var(--gold);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .info-banner h2 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-banner p {
+            color: var(--text-light);
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        /* Main Grid */
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        /* Column Cards */
+        .column-card {
+            background: var(--card);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .column-header {
+            padding: 30px;
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .column-header.safe {
+            background: linear-gradient(135deg, var(--accent-safe) 0%, #3d7a53 100%);
+        }
+
+        .column-header.risk {
+            background: linear-gradient(135deg, var(--accent-risk) 0%, #a84848 100%);
+        }
+
+        .column-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+
+        .column-header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .shield-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .column-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .column-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .column-body {
+            padding: 30px;
+        }
+
+        /* Asset Items */
+        .asset-item {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .asset-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .asset-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .asset-number {
+            background: var(--primary);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .asset-name {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .asset-statute {
+            font-size: 11px;
+            color: var(--text-light);
+            margin-left: 34px;
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        .asset-input-wrapper {
+            margin-left: 34px;
+            position: relative;
+        }
+
+        .currency-symbol {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .asset-input {
+            width: 100%;
+            padding: 12px 16px 12px 32px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Work Sans', sans-serif;
+            font-weight: 600;
+            color: var(--text);
+            background: var(--background);
+            transition: all 0.3s ease;
+        }
+
+        .asset-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(30, 58, 95, 0.08);
+        }
+
+        /* Totals */
+        .column-total {
+            background: var(--background);
+            padding: 25px 30px;
+            border-top: 3px solid var(--gold);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-label {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            color: var(--text-light);
+        }
+
+        .total-value {
+            font-family: 'Crimson Pro', serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Summary Section */
+        .summary-section {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 2px solid var(--gold);
+        }
+
+        .summary-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: var(--background);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid var(--border);
+        }
+
+        .summary-card-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-light);
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .summary-card-value {
+            font-family: 'Crimson Pro', serif;
+            font-size: 40px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .summary-card.safe .summary-card-value {
+            color: var(--accent-safe);
+        }
+
+        .summary-card.risk .summary-card-value {
+            color: var(--accent-risk);
+        }
+
+        .summary-card.protected .summary-card-value {
+            color: var(--primary);
+        }
+
+        .summary-card-subtitle {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        /* Protection Meter */
+        .protection-meter {
+            margin: 30px 0;
+        }
+
+        .meter-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .meter-bar {
+            height: 40px;
+            background: var(--risk-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid var(--border);
+        }
+
+        .meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-safe) 0%, #3d7a53 100%);
+            transition: width 0.6s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        /* Recommendation Box */
+        .recommendation {
+            background: linear-gradient(135deg, #f0f7f4 0%, #e8f4ed 100%);
+            border-left: 4px solid var(--accent-safe);
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .recommendation.warning {
+            background: linear-gradient(135deg, #fff5f5 0%, #f9e8e8 100%);
+            border-left-color: var(--accent-risk);
+        }
+
+        .recommendation h3 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+
+        .recommendation p {
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        /* Legal Disclaimer */
+        .disclaimer {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .disclaimer h3 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 18px;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .disclaimer p {
+            font-size: 13px;
+            color: var(--text-light);
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .statute-list {
+            font-size: 12px;
+            color: var(--text-light);
+            line-height: 1.8;
+            margin-top: 15px;
+            padding-left: 20px;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(30, 58, 95, 0.25);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 36px;
+            }
+
+            .column-title {
+                font-size: 24px;
+            }
+
+            .column-body {
+                padding: 20px;
+            }
+
+            .summary-section {
+                padding: 25px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="/" class="logo">pacheco.one</a>
+            <a href="/" class="back-link">← Back to Tools</a>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <h1>Where Are My Assets?</h1>
+            <p class="subtitle">Florida Asset Protection Calculator</p>
+            <p class="location">Florida Statute Protection Analysis</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Info Banner -->
+        <div class="info-banner">
+            <h2>🛡️ Understanding Asset Protection in Florida</h2>
+            <p>Florida law provides statutory protection for certain assets from creditors and legal judgments. This calculator helps you identify which of your assets are protected ("safe") and which remain vulnerable ("at risk"). Enter your asset values below to see your protection status and determine your insurance needs.</p>
+        </div>
+
+        <!-- Calculator Grid -->
+        <div class="calculator-grid">
+            <!-- SAFE Assets Column -->
+            <div class="column-card">
+                <div class="column-header safe">
+                    <div class="column-header-content">
+                        <span class="shield-icon">🛡️</span>
+                        <h2 class="column-title">Protected Assets</h2>
+                        <p class="column-subtitle">Legally Safe from Creditors</p>
+                    </div>
+                </div>
+                <div class="column-body">
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">1</span>
+                            <span class="asset-name">Pension</span>
+                        </div>
+                        <div class="asset-statute">Florida Statute 122.15 and 222.21</div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input safe-input" data-safe="true" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">2</span>
+                            <span class="asset-name">IRA's</span>
+                        </div>
+                        <div class="asset-statute">Florida Statute 222.21</div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input safe-input" data-safe="true" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">3</span>
+                            <span class="asset-name">Profit Sharing</span>
+                        </div>
+                        <div class="asset-statute">Florida Statute 222.21</div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input safe-input" data-safe="true" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">4</span>
+                            <span class="asset-name">Pension Money from U.S. Government</span>
+                        </div>
+                        <div class="asset-statute">Florida Statute 222.21</div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input safe-input" data-safe="true" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">5</span>
+                            <span class="asset-name">Annuities</span>
+                        </div>
+                        <div class="asset-statute">Florida Statute 222.14</div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input safe-input" data-safe="true" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">6</span>
+                            <span class="asset-name">Life Insurance Cash Value</span>
+                        </div>
+                        <div class="asset-statute">Florida Statute 222.13</div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input safe-input" data-safe="true" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">7</span>
+                            <span class="asset-name">One Auto (up to $1,000 max value)</span>
+                        </div>
+                        <div class="asset-statute">Protected up to $1,000</div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input safe-input" data-safe="true" placeholder="0" min="0" max="1000" step="100">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">8</span>
+                            <span class="asset-name">One Primary Home with Homestead</span>
+                        </div>
+                        <div class="asset-statute">FL Statute 222.01 & Section 4 Article X FL Constitution</div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input safe-input" data-safe="true" placeholder="0" min="0" step="10000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">9</span>
+                            <span class="asset-name">Life Insurance Cash Value (Husband/Wife)</span>
+                        </div>
+                        <div class="asset-statute">Florida Statute 222.13</div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input safe-input" data-safe="true" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+                </div>
+                <div class="column-total">
+                    <span class="total-label">Total Protected</span>
+                    <span class="total-value" id="safeTotal">$0</span>
+                </div>
+            </div>
+
+            <!-- AT RISK Assets Column -->
+            <div class="column-card">
+                <div class="column-header risk">
+                    <div class="column-header-content">
+                        <span class="shield-icon">⚠️</span>
+                        <h2 class="column-title">At-Risk Assets</h2>
+                        <p class="column-subtitle">Vulnerable to Creditors</p>
+                    </div>
+                </div>
+                <div class="column-body">
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">i</span>
+                            <span class="asset-name">Stock</span>
+                        </div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input risk-input" data-safe="false" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">ii</span>
+                            <span class="asset-name">Bonds</span>
+                        </div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input risk-input" data-safe="false" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">iii</span>
+                            <span class="asset-name">Mutual Funds</span>
+                        </div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input risk-input" data-safe="false" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">iv</span>
+                            <span class="asset-name">Cash Savings Accounts</span>
+                        </div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input risk-input" data-safe="false" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">v</span>
+                            <span class="asset-name">Checking Accounts</span>
+                        </div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input risk-input" data-safe="false" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">vi</span>
+                            <span class="asset-name">Certificates of Deposit</span>
+                        </div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input risk-input" data-safe="false" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">vii</span>
+                            <span class="asset-name">Real Estate (Lots, Rentals, Other Homes)</span>
+                        </div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input risk-input" data-safe="false" placeholder="0" min="0" step="10000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">viii</span>
+                            <span class="asset-name">Autos, RV's, Boats, and Planes</span>
+                        </div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input risk-input" data-safe="false" placeholder="0" min="0" step="5000">
+                        </div>
+                    </div>
+
+                    <div class="asset-item">
+                        <div class="asset-label">
+                            <span class="asset-number">ix</span>
+                            <span class="asset-name">Personal Property</span>
+                        </div>
+                        <div class="asset-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" class="asset-input risk-input" data-safe="false" placeholder="0" min="0" step="1000">
+                        </div>
+                    </div>
+                </div>
+                <div class="column-total">
+                    <span class="total-label">Total At Risk</span>
+                    <span class="total-value" id="riskTotal">$0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="summary-section">
+            <h2 class="summary-title">Your Asset Protection Summary</h2>
+            
+            <div class="summary-grid">
+                <div class="summary-card safe">
+                    <div class="summary-card-label">Protected Assets</div>
+                    <div class="summary-card-value" id="summaryProtected">$0</div>
+                    <div class="summary-card-subtitle">Legally shielded from creditors</div>
+                </div>
+
+                <div class="summary-card risk">
+                    <div class="summary-card-label">At-Risk Assets</div>
+                    <div class="summary-card-value" id="summaryRisk">$0</div>
+                    <div class="summary-card-subtitle">Vulnerable without insurance</div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-card-label">Total Assets</div>
+                    <div class="summary-card-value" id="summaryTotal">$0</div>
+                    <div class="summary-card-subtitle">Combined asset value</div>
+                </div>
+            </div>
+
+            <!-- Protection Meter -->
+            <div class="protection-meter">
+                <div class="meter-label">
+                    <span>Asset Protection Level</span>
+                    <span id="protectionPercent">0%</span>
+                </div>
+                <div class="meter-bar">
+                    <div class="meter-fill" id="meterFill" style="width: 0%;">
+                        <span id="meterText"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insurance Input -->
+            <div class="asset-item" style="margin-top: 30px; border: 2px solid var(--gold); padding: 25px; border-radius: 12px; background: var(--background);">
+                <div class="asset-label">
+                    <span class="asset-name" style="font-size: 18px;">Current Insurance Protection (Umbrella/Liability)</span>
+                </div>
+                <div class="asset-input-wrapper" style="margin-left: 0; margin-top: 15px;">
+                    <span class="currency-symbol">$</span>
+                    <input type="number" id="insuranceInput" class="asset-input" placeholder="0" min="0" step="100000" style="font-size: 18px; padding: 16px 16px 16px 32px;">
+                </div>
+            </div>
+
+            <!-- Recommendation -->
+            <div id="recommendationBox" class="recommendation">
+                <h3>💡 Recommendation</h3>
+                <p>Enter your asset values above to see personalized recommendations for protecting your wealth.</p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+                <button class="btn btn-primary" onclick="printSummary()">Print Summary</button>
+            </div>
+        </div>
+
+        <!-- Legal Disclaimer -->
+        <div class="disclaimer">
+            <h3>⚖️ Legal Disclaimer</h3>
+            <p>This calculator is provided for informational purposes only and does not constitute legal advice. A local law firm supplied the statutory citations depicted above. You should consult with your personal attorney regarding the specific language contained in the statutes and what protection they provide for you.</p>
+            <p>This form is not designed to be all-inclusive in identifying the "Safe" and "At Risk" assets you may own, singly or jointly with others. Providing insurance protection does not eliminate your risk of loss due to claim. Proper estate planning is important in providing protection for your assets and its foregoing effects on your quality of life.</p>
+            <div class="statute-list">
+                <strong>Florida Statute References:</strong><br>
+                • Pension & IRA's: FL Statute 122.15 and 222.21<br>
+                • Annuities: FL Statute 222.14<br>
+                • Primary Home: FL Statute 222.01 and Section 4 Article X FL Constitution<br>
+                • Life Insurance: FL Statute 222.13
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>Florida Asset Protection Calculator • pacheco.one</p>
+        <p style="margin-top: 10px; font-size: 12px;">Always consult with a qualified attorney for legal advice</p>
+    </footer>
+
+    <script>
+        // Initialize calculations on any input change
+        document.querySelectorAll('.asset-input').forEach(input => {
+            input.addEventListener('input', calculateTotals);
+        });
+
+        function calculateTotals() {
+            // Calculate safe assets total
+            let safeTotal = 0;
+            document.querySelectorAll('.safe-input').forEach(input => {
+                safeTotal += parseFloat(input.value) || 0;
+            });
+
+            // Calculate risk assets total
+            let riskTotal = 0;
+            document.querySelectorAll('.risk-input').forEach(input => {
+                riskTotal += parseFloat(input.value) || 0;
+            });
+
+            // Get insurance amount
+            const insuranceAmount = parseFloat(document.getElementById('insuranceInput').value) || 0;
+
+            // Calculate totals
+            const totalAssets = safeTotal + riskTotal;
+            const netRisk = Math.max(0, riskTotal - insuranceAmount);
+            const protectionPercent = totalAssets > 0 ? ((safeTotal + Math.min(insuranceAmount, riskTotal)) / totalAssets * 100) : 0;
+
+            // Update display
+            document.getElementById('safeTotal').textContent = '$' + formatNumber(safeTotal);
+            document.getElementById('riskTotal').textContent = '$' + formatNumber(riskTotal);
+            document.getElementById('summaryProtected').textContent = '$' + formatNumber(safeTotal);
+            document.getElementById('summaryRisk').textContent = '$' + formatNumber(riskTotal);
+            document.getElementById('summaryTotal').textContent = '$' + formatNumber(totalAssets);
+            document.getElementById('protectionPercent').textContent = protectionPercent.toFixed(0) + '%';
+
+            // Update protection meter
+            const meterFill = document.getElementById('meterFill');
+            meterFill.style.width = protectionPercent + '%';
+            
+            if (protectionPercent >= 50) {
+                document.getElementById('meterText').textContent = protectionPercent.toFixed(0) + '% Protected';
+            } else {
+                document.getElementById('meterText').textContent = '';
+            }
+
+            // Generate recommendation
+            generateRecommendation(safeTotal, riskTotal, netRisk, insuranceAmount, totalAssets);
+        }
+
+        function generateRecommendation(safe, risk, netRisk, insurance, total) {
+            const box = document.getElementById('recommendationBox');
+            let html = '<h3>';
+            let isWarning = false;
+
+            if (total === 0) {
+                html += '💡 Getting Started</h3><p>Enter your asset values above to see personalized recommendations for protecting your wealth.</p>';
+            } else if (netRisk === 0) {
+                html += '✅ Well Protected</h3><p>Excellent! Your at-risk assets of <strong>$' + formatNumber(risk) + '</strong> are fully covered by your insurance protection of <strong>$' + formatNumber(insurance) + '</strong>. Combined with your <strong>$' + formatNumber(safe) + '</strong> in statutorily protected assets, your wealth is well-shielded.</p>';
+            } else if (netRisk < risk * 0.25) {
+                html += '✅ Good Protection</h3><p>You have good coverage. Your insurance of <strong>$' + formatNumber(insurance) + '</strong> covers most of your at-risk assets. However, <strong>$' + formatNumber(netRisk) + '</strong> remains unprotected. Consider increasing your umbrella policy to fully protect your wealth.</p>';
+            } else if (netRisk < risk * 0.5) {
+                isWarning = true;
+                html += '⚠️ Moderate Risk</h3><p>You have moderate exposure. Of your <strong>$' + formatNumber(risk) + '</strong> in at-risk assets, <strong>$' + formatNumber(netRisk) + '</strong> remains unprotected. We recommend increasing your liability insurance coverage to at least <strong>$' + formatNumber(risk) + '</strong>.</p>';
+            } else {
+                isWarning = true;
+                html += '🚨 High Risk</h3><p>Your assets are significantly exposed. You have <strong>$' + formatNumber(risk) + '</strong> in at-risk assets but only <strong>$' + formatNumber(insurance) + '</strong> in insurance protection, leaving <strong>$' + formatNumber(netRisk) + '</strong> vulnerable. We strongly recommend increasing your umbrella/liability insurance to protect your wealth.</p>';
+            }
+
+            if (total > 0) {
+                html += '<p style="margin-top: 15px;"><strong>New Amount of Assets at Risk:</strong> $' + formatNumber(netRisk) + '</p>';
+            }
+
+            box.innerHTML = html;
+            box.className = isWarning ? 'recommendation warning' : 'recommendation';
+        }
+
+        function formatNumber(num) {
+            return num.toLocaleString('en-US', { maximumFractionDigits: 0 });
+        }
+
+        function clearAll() {
+            if (confirm('Clear all entered values?')) {
+                document.querySelectorAll('.asset-input').forEach(input => {
+                    input.value = '';
+                });
+                calculateTotals();
+            }
+        }
+
+        function printSummary() {
+            window.print();
+        }
+
+        // Initialize on page load
+        calculateTotals();
+    </script>
+</body>
+</html>
