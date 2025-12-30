@@ -38,6 +38,15 @@
             min-height: 100vh;
         }
 
+        /* Main app hidden by default until user logs in */
+        #mainApp {
+            display: none;
+        }
+
+        #mainApp.show {
+            display: block;
+        }
+
         /* Navigation */
         nav {
             background: var(--card);
@@ -778,7 +787,7 @@
                 document.getElementById('date').value = new Date().toISOString().split('T')[0];
                 
                 // Subscribe to real-time updates
-                subscribeToP olicies();
+                subscribeToPolicies();
             } else {
                 // User is signed out - redirect to login
                 window.location.href = 'business-tracker-login.html';
@@ -795,7 +804,7 @@
         }
 
         // Subscribe to real-time policy updates
-        function subscribeToP olicies() {
+        function subscribeToPolicies() {
             const policiesRef = collection(db, 'policies');
             const q = query(policiesRef, orderBy('createdAt', 'desc'));
             
