@@ -38,150 +38,6 @@
             min-height: 100vh;
         }
 
-        /* Login Screen */
-        .login-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            z-index: 9999;
-        }
-
-        .login-container.hide {
-            display: none !important;
-        }
-
-        .login-card {
-            background: white;
-            border-radius: 16px;
-            padding: 40px;
-            max-width: 400px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .login-header h1 {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--primary);
-            margin-bottom: 8px;
-        }
-
-        .login-header p {
-            color: var(--text-light);
-            font-size: 14px;
-        }
-
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .form-group label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .form-group input {
-            padding: 12px 14px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: var(--sans);
-            transition: all 0.2s;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-
-        .login-btn {
-            padding: 14px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: var(--sans);
-            margin-top: 10px;
-        }
-
-        .login-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .login-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .auth-toggle {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-            color: var(--text-light);
-        }
-
-        .auth-toggle a {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .auth-toggle a:hover {
-            text-decoration: underline;
-        }
-
-        .error-message {
-            background: #fee2e2;
-            color: #991b1b;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            margin-bottom: 16px;
-            display: none;
-        }
-
-        .error-message.show {
-            display: block;
-        }
-
-        /* Hide main app initially */
-        #mainApp {
-            display: none !important;
-        }
-
-        #mainApp.show {
-            display: block !important;
-        }
-
         /* Navigation */
         nav {
             background: var(--card);
@@ -627,34 +483,6 @@
     </style>
 </head>
 <body>
-    <!-- Login Screen -->
-    <div id="loginScreen" class="login-container">
-        <div class="login-card">
-            <div class="login-header">
-                <h1>New Business Tracker</h1>
-                <p>Sign in to access your dashboard</p>
-            </div>
-            
-            <div class="error-message" id="authError"></div>
-            
-            <form id="loginForm" class="login-form">
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" placeholder="you@example.com" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" placeholder="••••••••" required>
-                </div>
-                <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
-            </form>
-            
-            <div class="auth-toggle">
-                Don't have an account? <a onclick="toggleAuthMode()">Sign Up</a>
-            </div>
-        </div>
-    </div>
-
     <!-- Main App -->
     <div id="mainApp">
         <!-- Navigation -->
@@ -905,12 +733,10 @@
 
         // Global variables
         let policies = [];
-        let isSignUp = false;
         let unsubscribe = null;
 
         // Make functions available globally
         window.signOut = signOutUser;
-        window.toggleAuthMode = toggleAuthMode;
         window.toggleQuickEntry = toggleQuickEntry;
         window.applyFilters = applyFilters;
         window.editPolicy = editPolicy;
@@ -918,11 +744,10 @@
         window.closeEditModal = closeEditModal;
         window.exportToCSV = exportToCSV;
 
-        // Auth state observer
+        // Auth state observer - redirect if not logged in
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // User is signed in
-                document.getElementById('loginScreen').classList.add('hide');
+                // User is signed in - show app
                 document.getElementById('mainApp').classList.add('show');
                 document.getElementById('userEmail').textContent = user.email;
                 
@@ -932,61 +757,15 @@
                 // Subscribe to real-time updates
                 subscribeToP olicies();
             } else {
-                // User is signed out
-                document.getElementById('loginScreen').classList.remove('hide');
-                document.getElementById('mainApp').classList.remove('show');
-                
-                // Unsubscribe from updates
-                if (unsubscribe) {
-                    unsubscribe();
-                }
+                // User is signed out - redirect to login
+                window.location.href = 'business-tracker-login.html';
             }
         });
-
-        // Login form submission
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('loginBtn');
-            const errorEl = document.getElementById('authError');
-            
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> Processing...';
-            errorEl.classList.remove('show');
-            
-            try {
-                if (isSignUp) {
-                    await createUserWithEmailAndPassword(auth, email, password);
-                } else {
-                    await signInWithEmailAndPassword(auth, email, password);
-                }
-            } catch (error) {
-                errorEl.textContent = error.message;
-                errorEl.classList.add('show');
-                btn.disabled = false;
-                btn.innerHTML = isSignUp ? 'Sign Up' : 'Sign In';
-            }
-        });
-
-        function toggleAuthMode() {
-            isSignUp = !isSignUp;
-            const btn = document.getElementById('loginBtn');
-            const toggleText = document.querySelector('.auth-toggle');
-            
-            if (isSignUp) {
-                btn.textContent = 'Sign Up';
-                toggleText.innerHTML = 'Already have an account? <a onclick="toggleAuthMode()">Sign In</a>';
-            } else {
-                btn.textContent = 'Sign In';
-                toggleText.innerHTML = 'Don\'t have an account? <a onclick="toggleAuthMode()">Sign Up</a>';
-            }
-        }
 
         async function signOutUser() {
             try {
                 await firebaseSignOut(auth);
+                // Redirect happens automatically via onAuthStateChanged
             } catch (error) {
                 console.error('Error signing out:', error);
             }
