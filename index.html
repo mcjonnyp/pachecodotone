@@ -95,6 +95,13 @@
             visibility: visible;
             transform: translateY(0);
         }
+        
+        /* Mobile dropdown - show on click */
+        .dropdown-menu.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
 
         .dropdown-menu a {
             display: block;
@@ -199,11 +206,10 @@
                     </span>
                     <div class="dropdown-menu">
                         <a href="acord35-tool.html">ACORD 35 Auto-Filler</a>
-                        <a href="deductible-calculator.html">Deductible Calculator</a>
-                        <a href="florida-asset-protection.html">Asset Protection Calculator</a>
-                        <a href="property-assessment.html">Property Insurance Assessment for Realtors</a>
-                        <a href="business-tracker-login.html">Tracker</a>
-                        <!-- Add more tools here as you build them -->
+                        <a href="deductible-calculator.html">Deductible Savings Calculator</a>
+                        <a href="florida-asset-protection.html">FL Asset Protection Calculator</a>
+                        <a href="property-assessment.html">Property Insurance Assessment</a>
+                        <a href="business-tracker-login.html">Business Tracker</a>
                     </div>
                 </li>
             </ul>
@@ -213,8 +219,8 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
-            <h1>hello.</h1>
-            <p>&welcome</p>
+            <h1>pacheco.one</h1>
+            <p>Tools and resources for insurance professionals</p>
         </div>
     </section>
 
@@ -222,8 +228,38 @@
     <footer>
         <p>pacheco.one</p>
         <p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">
-            © 2025
+            © 2025 • Built for efficiency
         </p>
     </footer>
+    
+    <script>
+        // Handle dropdown for mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdown = document.querySelector('.dropdown');
+            const dropdownToggle = document.querySelector('.dropdown-toggle');
+            const dropdownMenu = document.querySelector('.dropdown-menu');
+            
+            // Toggle dropdown on click for mobile
+            dropdownToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('active');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!dropdown.contains(e.target)) {
+                    dropdownMenu.classList.remove('active');
+                }
+            });
+            
+            // Close dropdown when clicking a link
+            const dropdownLinks = dropdownMenu.querySelectorAll('a');
+            dropdownLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    dropdownMenu.classList.remove('active');
+                });
+            });
+        });
+    </script>
 </body>
 </html>
