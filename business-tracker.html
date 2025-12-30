@@ -40,12 +40,22 @@
 
         /* Login Screen */
         .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 9999;
+        }
+
+        .login-container.hide {
+            display: none !important;
         }
 
         .login-card {
@@ -165,11 +175,11 @@
 
         /* Hide main app initially */
         #mainApp {
-            display: none;
+            display: none !important;
         }
 
         #mainApp.show {
-            display: block;
+            display: block !important;
         }
 
         /* Navigation */
@@ -912,7 +922,7 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 // User is signed in
-                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('loginScreen').classList.add('hide');
                 document.getElementById('mainApp').classList.add('show');
                 document.getElementById('userEmail').textContent = user.email;
                 
@@ -923,7 +933,7 @@
                 subscribeToP olicies();
             } else {
                 // User is signed out
-                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('loginScreen').classList.remove('hide');
                 document.getElementById('mainApp').classList.remove('show');
                 
                 // Unsubscribe from updates
