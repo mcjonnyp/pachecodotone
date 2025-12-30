@@ -175,15 +175,11 @@
             </div>
             <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
         </form>
-        
-        <div class="auth-toggle">
-            Don't have an account? <a onclick="toggleAuthMode()">Sign Up</a>
-        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
         // Firebase configuration
         const firebaseConfig = {
@@ -198,11 +194,6 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-
-        let isSignUp = false;
-
-        // Make function available globally
-        window.toggleAuthMode = toggleAuthMode;
 
         // Check if already logged in
         onAuthStateChanged(auth, (user) => {
@@ -222,37 +213,19 @@
             const errorEl = document.getElementById('authError');
             
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> Processing...';
+            btn.innerHTML = '<span class="spinner"></span> Signing in...';
             errorEl.classList.remove('show');
             
             try {
-                if (isSignUp) {
-                    await createUserWithEmailAndPassword(auth, email, password);
-                } else {
-                    await signInWithEmailAndPassword(auth, email, password);
-                }
+                await signInWithEmailAndPassword(auth, email, password);
                 // Redirect happens automatically via onAuthStateChanged
             } catch (error) {
                 errorEl.textContent = error.message;
                 errorEl.classList.add('show');
                 btn.disabled = false;
-                btn.innerHTML = isSignUp ? 'Sign Up' : 'Sign In';
+                btn.innerHTML = 'Sign In';
             }
         });
-
-        function toggleAuthMode() {
-            isSignUp = !isSignUp;
-            const btn = document.getElementById('loginBtn');
-            const toggleText = document.querySelector('.auth-toggle');
-            
-            if (isSignUp) {
-                btn.textContent = 'Sign Up';
-                toggleText.innerHTML = 'Already have an account? <a onclick="toggleAuthMode()">Sign In</a>';
-            } else {
-                btn.textContent = 'Sign In';
-                toggleText.innerHTML = 'Don\'t have an account? <a onclick="toggleAuthMode()">Sign Up</a>';
-            }
-        }
     </script>
 </body>
 </html>
