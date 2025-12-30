@@ -677,6 +677,17 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- Pagination -->
+                <div id="pagination" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background: var(--background); border-top: 1px solid var(--border);">
+                    <div style="color: var(--text-light); font-size: 14px;" id="paginationInfo">
+                        Showing 0-0 of 0 policies
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" id="prevBtn" onclick="previousPage()" disabled>← Previous</button>
+                        <button class="btn btn-secondary" id="nextBtn" onclick="nextPage()" disabled>Next →</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -766,6 +777,8 @@
         // Global variables
         let policies = [];
         let unsubscribe = null;
+        let currentPage = 1;
+        const policiesPerPage = 50;
 
         // Make functions available globally
         window.signOut = signOutUser;
@@ -775,6 +788,8 @@
         window.deletePolicy = deletePolicy;
         window.closeEditModal = closeEditModal;
         window.exportToCSV = exportToCSV;
+        window.nextPage = nextPage;
+        window.previousPage = previousPage;
 
         // Auth state observer - redirect if not logged in
         onAuthStateChanged(auth, (user) => {
@@ -908,8 +923,23 @@
         function renderPolicies() {
             const tbody = document.getElementById('policiesTableBody');
             const filteredPolicies = getFilteredPolicies();
+            
+            // Calculate pagination
+            const totalPolicies = filteredPolicies.length;
+            const totalPages = Math.ceil(totalPolicies / policiesPerPage);
+            const startIndex = (currentPage - 1) * policiesPerPage;
+            const endIndex = Math.min(startIndex + policiesPerPage, totalPolicies);
+            const paginatedPolicies = filteredPolicies.slice(startIndex, endIndex);
 
-            if (filteredPolicies.length === 0) {
+            // Update pagination info
+            document.getElementById('paginationInfo').textContent = 
+                `Showing ${totalPolicies > 0 ? startIndex + 1 : 0}-${endIndex} of ${totalPolicies} policies`;
+            
+            // Update pagination buttons
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+
+            if (paginatedPolicies.length === 0) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="9" class="empty-state">
@@ -921,7 +951,7 @@
                 return;
             }
 
-            tbody.innerHTML = filteredPolicies.map((policy) => `
+            tbody.innerHTML = paginatedPolicies.map((policy) => `
                 <tr>
                     <td>${formatDate(policy.date)}</td>
                     <td><strong>${policy.customer}</strong></td>
@@ -937,6 +967,22 @@
                     </td>
                 </tr>
             `).join('');
+        }
+        
+        function nextPage() {
+            const filteredPolicies = getFilteredPolicies();
+            const totalPages = Math.ceil(filteredPolicies.length / policiesPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderPolicies();
+            }
+        }
+        
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderPolicies();
+            }
         }
 
         function getFilteredPolicies() {
@@ -973,6 +1019,7 @@
         }
 
         function applyFilters() {
+            currentPage = 1; // Reset to first page when filters change
             updateDashboard();
             renderPolicies();
         }
