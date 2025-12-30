@@ -526,6 +526,11 @@
                     <div class="stat-value" id="avgPremium">$0</div>
                     <div class="stat-subtitle">Per policy</div>
                 </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white;">
+                    <div class="stat-label" style="color: rgba(255,255,255,0.9);">Allstate Policies</div>
+                    <div class="stat-value" id="allstatePolicies" style="color: white;">0</div>
+                    <div class="stat-subtitle" id="allstateGoal" style="color: rgba(255,255,255,0.9);">of 32 monthly goal</div>
+                </div>
             </div>
 
             <!-- Quick Entry Form -->
@@ -850,6 +855,7 @@
                 premium: parseFloat(document.getElementById('premium').value),
                 referralSource: document.getElementById('referralSource').value,
                 producer: document.getElementById('producer').value,
+                isAllstate: document.getElementById('company').value.toLowerCase().includes('allstate'),
                 createdAt: serverTimestamp(),
                 createdBy: auth.currentUser.email
             };
@@ -881,6 +887,7 @@
                 premium: parseFloat(document.getElementById('editPremium').value),
                 referralSource: document.getElementById('editReferralSource').value,
                 producer: document.getElementById('editProducer').value,
+                isAllstate: document.getElementById('editCompany').value.toLowerCase().includes('allstate'),
                 updatedAt: serverTimestamp(),
                 updatedBy: auth.currentUser.email
             };
@@ -917,6 +924,11 @@
             // Average premium
             const avgPremium = filteredPolicies.length > 0 ? totalPremium / filteredPolicies.length : 0;
             document.getElementById('avgPremium').textContent = '$' + avgPremium.toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+            // Allstate policies count
+            const allstateCount = filteredPolicies.filter(p => p.isAllstate).length;
+            document.getElementById('allstatePolicies').textContent = allstateCount;
+            document.getElementById('allstateGoal').textContent = `of 32 monthly goal (${Math.round(allstateCount/32*100)}%)`;
 
         }
 
