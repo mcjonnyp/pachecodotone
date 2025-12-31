@@ -325,13 +325,14 @@
                     1. Upload your commission statement (Excel or CSV format)<br>
                     2. <strong>Supported formats:</strong> Ivantage, Cabrillo, Universal P&C, Slide<br>
                     3. Tool reads: Customer Name, Transaction Type, and Commission Amount<br>
-                    4. Checks each "New business" against your Business Tracker<br>
-                    5. Calculates total commission per producer:<br>
-                    &nbsp;&nbsp;&nbsp;• New Business: <strong>Add</strong> commission<br>
-                    &nbsp;&nbsp;&nbsp;• Re-Writes: <strong>Deduct</strong> commission<br>
-                    &nbsp;&nbsp;&nbsp;• Endorsements: <strong>Add</strong> if positive, <strong>Deduct</strong> if negative<br>
-                    &nbsp;&nbsp;&nbsp;• Cancellations: <strong>Deduct</strong> commission<br>
-                    6. Shows total dollars to pay each producer
+                    4. Checks each transaction against your Business Tracker<br>
+                    5. <strong>12-Month Rolling Window:</strong><br>
+                    &nbsp;&nbsp;&nbsp;• <strong>New Business:</strong> Only counts if policy in tracker within last 12 months<br>
+                    &nbsp;&nbsp;&nbsp;• <strong>Re-Writes:</strong> Deducted from commission<br>
+                    &nbsp;&nbsp;&nbsp;• <strong>Endorsements:</strong> Only adds commission if policy written within last 12 months<br>
+                    &nbsp;&nbsp;&nbsp;• <strong>Cancellations:</strong> Only deducts commission if policy written within last 12 months<br>
+                    &nbsp;&nbsp;&nbsp;• <strong>Renewals:</strong> Ignored (no new business commission)<br>
+                    6. Shows total commission dollars to pay each producer
                 </p>
             </div>
         </div>
@@ -721,6 +722,7 @@
             const cancellations = [];
             const endorsements = [];
             const missingPolicies = [];
+            const ignoredTransactions = []; // Track what was ignored
 
             console.log(`\n=== PROCESSING ${records.length} RECORDS ===`);
 
@@ -835,35 +837,87 @@
                         amount: record.amount
                     });
                 } else if (isCancellation) {
-                    // Cancellation - deduct from commission
+                    // Cancellation - only deduct if policy was new business in last 12 months
                     const match = businessTrackerPolicies.find(policy => 
                         fuzzyMatch(policy.customer, record.name)
                     );
 
                     if (match) {
-                        cancellations.push({
+                        const policyDate = new Date(match.date);
+                        const isRecent = policyDate >= twelveMonthsAgo;
+                        
+                        if (isRecent) {
+                            console.log(`CANCELLATION (within 12 months): ${record.name} | Policy date: ${match.date} | Producer: ${match.producer} | Chargeback: $${Math.abs(record.amount)}`);
+                            cancellations.push({
+                                name: record.name,
+                                producer: match.producer,
+                                amount: Math.abs(record.amount),
+                                policyDate: match.date
+                            });
+                        } else {
+                            console.log(`CANCELLATION (>12 months old - IGNORE): ${record.name} | Policy date: ${match.date}`);
+                            // Don't add to cancellations - policy too old
+                            ignoredTransactions.push({
+                                name: record.name,
+                                type: 'Cancellation',
+                                reason: `Policy from ${match.date} (>12 months)`,
+                                amount: Math.abs(record.amount)
+                            });
+                        }
+                    } else {
+                        console.log(`CANCELLATION (not in tracker - IGNORE): ${record.name}`);
+                        ignoredTransactions.push({
                             name: record.name,
-                            producer: match.producer,
-                            amount: Math.abs(record.amount) // Make positive for display
+                            type: 'Cancellation',
+                            reason: 'Not in Business Tracker',
+                            amount: Math.abs(record.amount)
                         });
                     }
                 } else if (isEndorsement) {
-                    // Endorsement - add if positive, deduct if negative
+                    // Endorsement - only add commission if policy was new business in last 12 months
                     const match = businessTrackerPolicies.find(policy => 
                         fuzzyMatch(policy.customer, record.name)
                     );
 
-                    if (match && record.amount > 0) {
-                        endorsements.push({
+                    if (match) {
+                        const policyDate = new Date(match.date);
+                        const isRecent = policyDate >= twelveMonthsAgo;
+                        
+                        if (isRecent) {
+                            if (record.amount > 0) {
+                                console.log(`ENDORSEMENT (within 12 months): ${record.name} | Policy date: ${match.date} | Producer: ${match.producer} | Commission: $${record.amount}`);
+                                endorsements.push({
+                                    name: record.name,
+                                    producer: match.producer,
+                                    amount: record.amount,
+                                    policyDate: match.date
+                                });
+                            } else if (record.amount < 0) {
+                                // Negative endorsement = chargeback (within 12 months)
+                                console.log(`NEGATIVE ENDORSEMENT (within 12 months): ${record.name} | Policy date: ${match.date} | Producer: ${match.producer} | Chargeback: $${Math.abs(record.amount)}`);
+                                cancellations.push({
+                                    name: record.name,
+                                    producer: match.producer,
+                                    amount: Math.abs(record.amount),
+                                    policyDate: match.date
+                                });
+                            }
+                        } else {
+                            console.log(`ENDORSEMENT (>12 months old - IGNORE): ${record.name} | Policy date: ${match.date} | Amount: $${record.amount}`);
+                            // Don't add to endorsements or cancellations - policy too old
+                            ignoredTransactions.push({
+                                name: record.name,
+                                type: record.amount > 0 ? 'Endorsement' : 'Negative Endorsement',
+                                reason: `Policy from ${match.date} (>12 months)`,
+                                amount: Math.abs(record.amount)
+                            });
+                        }
+                    } else {
+                        console.log(`ENDORSEMENT (not in tracker - IGNORE): ${record.name}`);
+                        ignoredTransactions.push({
                             name: record.name,
-                            producer: match.producer,
-                            amount: record.amount
-                        });
-                    } else if (match && record.amount < 0) {
-                        // Negative endorsement = chargeback
-                        cancellations.push({
-                            name: record.name,
-                            producer: match.producer,
+                            type: 'Endorsement',
+                            reason: 'Not in Business Tracker',
                             amount: Math.abs(record.amount)
                         });
                     }
@@ -884,19 +938,21 @@
             console.log(`Renewals: ${renewals.length}`);
             console.log(`Endorsements: ${endorsements.length}`);
             console.log(`Cancellations: ${cancellations.length}`);
+            console.log(`Ignored (>12 months or not in tracker): ${ignoredTransactions.length}`);
 
-            resultsData = { newBusiness, rewrites, renewals, cancellations, endorsements, missingPolicies };
+            resultsData = { newBusiness, rewrites, renewals, cancellations, endorsements, missingPolicies, ignoredTransactions };
             displayResults();
         }
 
         function displayResults() {
-            const { newBusiness, rewrites, renewals, cancellations, endorsements, missingPolicies } = resultsData;
+            const { newBusiness, rewrites, renewals, cancellations, endorsements, missingPolicies, ignoredTransactions } = resultsData;
 
             // Calculate totals
             const nbTotal = newBusiness.reduce((sum, item) => sum + item.amount, 0);
             const rwTotal = rewrites.reduce((sum, item) => sum + item.amount, 0);
             const rnTotal = renewals.reduce((sum, item) => sum + item.amount, 0);
             const missingTotal = missingPolicies.reduce((sum, item) => sum + item.amount, 0);
+            const ignoredTotal = ignoredTransactions ? ignoredTransactions.reduce((sum, item) => sum + item.amount, 0) : 0;
 
             // Update counts with dollar amounts
             document.getElementById('newBusinessCount').innerHTML = `${newBusiness.length}<div style="font-size:18px;font-weight:600;margin-top:8px;">$${nbTotal.toFixed(2)}</div>`;
@@ -932,6 +988,20 @@
                     '</div>';
             } else {
                 document.getElementById('missingList').innerHTML = '<div class="name-item" style="color: #15803d; background: #dcfce7; padding: 12px; border-radius: 6px;">✅ All new business policies are in your tracker!</div>';
+            }
+
+            // Display ignored transactions (endorsements/cancellations >12 months old)
+            if (ignoredTransactions && ignoredTransactions.length > 0) {
+                const ignoredHtml = '<div style="margin-top: 20px; padding: 16px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px;">' +
+                    '<div style="font-size: 14px; font-weight: 700; color: #475569; margin-bottom: 12px;">ℹ️ Ignored Transactions (' + ignoredTransactions.length + ') - Not affecting commission</div>' +
+                    '<div style="font-size: 13px; color: #64748b; margin-bottom: 8px;">These endorsements/cancellations were excluded because the policy is either >12 months old or not in your tracker:</div>' +
+                    ignoredTransactions.map(item => 
+                        `<div style="font-size: 12px; padding: 8px; background: white; margin: 4px 0; border-radius: 4px; color: #475569;">
+                            ${item.name} - ${item.type} ($${item.amount.toFixed(2)}) - ${item.reason}
+                        </div>`
+                    ).join('') +
+                    '</div>';
+                document.getElementById('missingList').innerHTML += ignoredHtml;
             }
 
             // Calculate producer totals
@@ -1012,10 +1082,10 @@
                         calcText += ` - $${totals.rewriteAmount.toFixed(2)} re-writes (${totals.rewriteCount})`;
                     }
                     if (totals.endorsementCount > 0) {
-                        calcText += ` + $${totals.endorsementAmount.toFixed(2)} endorsements (${totals.endorsementCount})`;
+                        calcText += ` + $${totals.endorsementAmount.toFixed(2)} endorsements (${totals.endorsementCount} - last 12 months only)`;
                     }
                     if (totals.chargebackCount > 0) {
-                        calcText += ` - $${totals.chargebackAmount.toFixed(2)} chargebacks (${totals.chargebackCount})`;
+                        calcText += ` - $${totals.chargebackAmount.toFixed(2)} chargebacks (${totals.chargebackCount} - last 12 months only)`;
                     }
 
                     return `
