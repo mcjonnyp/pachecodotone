@@ -402,6 +402,20 @@
                 </div>
             </div>
 
+            <!-- Endorsements Section -->
+            <div class="producer-summary" id="endorsementsSection" style="display: none; border: 2px solid #10b981; margin-top: 30px;">
+                <h2 style="color: #059669;">📝 Endorsements (Added to Commission)</h2>
+                <p style="color: #047857; margin-bottom: 16px; font-size: 14px;">These policy changes/endorsements add commission to the producer totals.</p>
+                <div id="endorsementsList"></div>
+            </div>
+
+            <!-- Chargebacks Section -->
+            <div class="producer-summary" id="chargebacksSection" style="display: none; border: 2px solid #ef4444; margin-top: 20px;">
+                <h2 style="color: #dc2626;">❌ Chargebacks (Deducted from Commission)</h2>
+                <p style="color: #b91c1c; margin-bottom: 16px; font-size: 14px;">These cancellations and negative endorsements are deducted from producer totals.</p>
+                <div id="chargebacksList"></div>
+            </div>
+
             <div class="actions">
                 <button class="btn" onclick="exportResults()">📊 Export to Excel</button>
                 <button class="btn btn-secondary" onclick="window.location.href='business-tracker-app.html'">📈 Business Tracker</button>
@@ -1067,6 +1081,88 @@
                 document.getElementById('missingList').innerHTML += ignoredHtml;
             }
 
+            // Display endorsements section
+            if (endorsements.length > 0) {
+                document.getElementById('endorsementsSection').style.display = 'block';
+                const endorsementTotal = endorsements.reduce((sum, item) => sum + item.amount, 0);
+                
+                // Group by producer
+                const endorsementsByProducer = {};
+                endorsements.forEach(item => {
+                    if (!endorsementsByProducer[item.producer]) {
+                        endorsementsByProducer[item.producer] = [];
+                    }
+                    endorsementsByProducer[item.producer].push(item);
+                });
+                
+                let endorsementsHtml = '<div style="display: grid; gap: 12px;">';
+                for (const [producer, items] of Object.entries(endorsementsByProducer)) {
+                    const producerTotal = items.reduce((sum, item) => sum + item.amount, 0);
+                    endorsementsHtml += `
+                        <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; border-left: 4px solid #10b981;">
+                            <div style="font-size: 16px; font-weight: 700; color: #059669; margin-bottom: 12px;">
+                                ${producer} - $${producerTotal.toFixed(2)} (${items.length} endorsement${items.length > 1 ? 's' : ''})
+                            </div>
+                            <div style="display: grid; gap: 6px;">
+                                ${items.map(item => `
+                                    <div style="font-size: 13px; padding: 8px; background: white; border-radius: 4px; color: #065f46;">
+                                        📝 ${item.name} - <strong>$${item.amount.toFixed(2)}</strong>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                endorsementsHtml += `</div>
+                    <div style="margin-top: 16px; padding: 16px; background: #ecfdf5; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 14px; color: #047857;">Total Endorsements:</div>
+                        <div style="font-size: 24px; font-weight: 700; color: #059669;">$${endorsementTotal.toFixed(2)}</div>
+                    </div>
+                `;
+                document.getElementById('endorsementsList').innerHTML = endorsementsHtml;
+            }
+
+            // Display chargebacks section
+            if (cancellations.length > 0) {
+                document.getElementById('chargebacksSection').style.display = 'block';
+                const chargebackTotal = cancellations.reduce((sum, item) => sum + item.amount, 0);
+                
+                // Group by producer
+                const chargebacksByProducer = {};
+                cancellations.forEach(item => {
+                    if (!chargebacksByProducer[item.producer]) {
+                        chargebacksByProducer[item.producer] = [];
+                    }
+                    chargebacksByProducer[item.producer].push(item);
+                });
+                
+                let chargebacksHtml = '<div style="display: grid; gap: 12px;">';
+                for (const [producer, items] of Object.entries(chargebacksByProducer)) {
+                    const producerTotal = items.reduce((sum, item) => sum + item.amount, 0);
+                    chargebacksHtml += `
+                        <div style="background: #fef2f2; padding: 16px; border-radius: 8px; border-left: 4px solid #ef4444;">
+                            <div style="font-size: 16px; font-weight: 700; color: #dc2626; margin-bottom: 12px;">
+                                ${producer} - $${producerTotal.toFixed(2)} (${items.length} chargeback${items.length > 1 ? 's' : ''})
+                            </div>
+                            <div style="display: grid; gap: 6px;">
+                                ${items.map(item => `
+                                    <div style="font-size: 13px; padding: 8px; background: white; border-radius: 4px; color: #991b1b;">
+                                        ❌ ${item.name} - <strong>$${item.amount.toFixed(2)}</strong>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                chargebacksHtml += `</div>
+                    <div style="margin-top: 16px; padding: 16px; background: #fee2e2; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 14px; color: #991b1b;">Total Chargebacks:</div>
+                        <div style="font-size: 24px; font-weight: 700; color: #dc2626;">$${chargebackTotal.toFixed(2)}</div>
+                    </div>
+                `;
+                document.getElementById('chargebacksList').innerHTML = chargebacksHtml;
+            }
+
             // Calculate producer totals
             calculateProducerTotals();
 
@@ -1307,6 +1403,8 @@
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('results').classList.add('hidden');
             document.getElementById('fileInput').value = '';
+            document.getElementById('endorsementsSection').style.display = 'none';
+            document.getElementById('chargebacksSection').style.display = 'none';
             resultsData = {};
         };
     </script>
