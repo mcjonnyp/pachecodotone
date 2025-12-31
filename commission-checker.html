@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commission Checker | pacheco.one</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --background: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-light);
+            font-size: 16px;
+        }
+
+        .upload-card {
+            background: var(--card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: #f8fafc;
+        }
+
+        .upload-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .upload-subtext {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .info-box h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            font-size: 14px;
+            color: #1e3a8a;
+            line-height: 1.6;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .result-card {
+            background: var(--card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 24px;
+        }
+
+        .result-card.new-business {
+            border-left: 4px solid var(--success);
+        }
+
+        .result-card.rewrite {
+            border-left: 4px solid var(--warning);
+        }
+
+        .result-card.renewal {
+            border-left: 4px solid var(--text-light);
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .result-icon {
+            font-size: 32px;
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .result-count {
+            font-size: 48px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 8px;
+        }
+
+        .result-subtitle {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .names-list {
+            background: var(--background);
+            border-radius: 8px;
+            padding: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 13px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .name-item {
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .name-item:last-child {
+            border-bottom: none;
+        }
+
+        .producer-summary {
+            background: var(--card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .producer-summary h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        .producer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--background);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .producer-name {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .producer-calc {
+            font-size: 14px;
+            color: var(--text-light);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .producer-total {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .btn:hover {
+            background: #4f46e5;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--text-light);
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Commission Checker</h1>
+            <p>Check commission statements against New Business Log</p>
+        </div>
+
+        <div class="upload-card" id="uploadCard">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📄</div>
+                <div class="upload-text">Upload Commission Statement</div>
+                <div class="upload-subtext">PDF, Excel, or CSV format supported</div>
+            </div>
+            <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls,.csv">
+
+            <div class="info-box">
+                <h3>How It Works:</h3>
+                <p>
+                    1. Upload your commission statement (any format)<br>
+                    2. Tool extracts customer names<br>
+                    3. Checks each name against your Business Tracker<br>
+                    4. Identifies: New Business ✅, Re-Writes 🔄, and Renewals ❌<br>
+                    5. Calculates commissionable policies per producer (New Business - Re-Writes)
+                </p>
+            </div>
+        </div>
+
+        <div class="loading hidden" id="loading">
+            <div class="spinner"></div>
+            <div>Processing commission statement...</div>
+        </div>
+
+        <div id="results" class="hidden">
+            <!-- Producer Summary -->
+            <div class="producer-summary">
+                <h2>💰 Producer Commission Summary</h2>
+                <div id="producerList"></div>
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 20px; font-weight: 700;">
+                        <div>TOTAL COMMISSIONABLE POLICIES:</div>
+                        <div style="color: #6366f1; font-size: 32px; font-family: 'JetBrains Mono', monospace;" id="grandTotal">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Grid -->
+            <div class="results-grid">
+                <!-- New Business Card -->
+                <div class="result-card new-business">
+                    <div class="result-header">
+                        <div class="result-icon">✅</div>
+                        <div class="result-title">New Business</div>
+                    </div>
+                    <div class="result-count" id="newBusinessCount">0</div>
+                    <div class="result-subtitle">Found in Business Tracker</div>
+                    <div class="names-list" id="newBusinessList"></div>
+                </div>
+
+                <!-- Re-Writes Card -->
+                <div class="result-card rewrite">
+                    <div class="result-header">
+                        <div class="result-icon">🔄</div>
+                        <div class="result-title">Re-Writes</div>
+                    </div>
+                    <div class="result-count" id="rewriteCount">0</div>
+                    <div class="result-subtitle">Deduct from commission</div>
+                    <div class="names-list" id="rewriteList"></div>
+                </div>
+
+                <!-- Renewals Card -->
+                <div class="result-card renewal">
+                    <div class="result-header">
+                        <div class="result-icon">❌</div>
+                        <div class="result-title">Renewals</div>
+                    </div>
+                    <div class="result-count" id="renewalCount">0</div>
+                    <div class="result-subtitle">Not in Business Tracker</div>
+                    <div class="names-list" id="renewalList"></div>
+                </div>
+            </div>
+
+            <!-- Missing Policies Alert -->
+            <div class="producer-summary" id="missingPoliciesCard" style="display: none; border: 2px solid #f59e0b; background: #fffbeb;">
+                <h2 style="color: #92400e;">⚠️ MISSING FROM TRACKER - ACTION REQUIRED</h2>
+                <p style="color: #78350f; margin-bottom: 16px;">These policies appear to be NEW BUSINESS (not in renewals) but are missing from your tracker. They may have been entered incorrectly or forgotten.</p>
+                <div class="names-list" id="missingPoliciesList" style="background: white;"></div>
+                <p style="color: #78350f; margin-top: 12px; font-size: 14px;">💡 <strong>Action:</strong> Manually verify these names and add them to the Business Tracker if they are indeed new business.</p>
+            </div>
+
+            <!-- Endorsements & Chargebacks Section -->
+            <div class="producer-summary" style="border: 2px solid #3b82f6;">
+                <h2 style="color: #1e40af;">📝 Endorsements & Chargebacks (12-Month Rolling)</h2>
+                
+                <div style="background: #eff6ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 12px; color: #1e40af;">Upload Additional Data:</h3>
+                    <p style="font-size: 14px; color: #1e3a8a; margin-bottom: 16px;">
+                        Upload endorsement premium and cancellation data to calculate accurate commissions.
+                    </p>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div>
+                            <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Endorsements (Excel/CSV):</label>
+                            <input type="file" id="endorsementsInput" accept=".xlsx,.xls,.csv" style="display: block; width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            <p style="font-size: 12px; color: #64748b; margin-top: 4px;">Columns: Customer Name, Premium, Producer</p>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Cancellations (Excel/CSV):</label>
+                            <input type="file" id="cancellationsInput" accept=".xlsx,.xls,.csv" style="display: block; width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            <p style="font-size: 12px; color: #64748b; margin-top: 4px;">Columns: Customer Name, Chargeback Amount, Producer</p>
+                        </div>
+                    </div>
+                    
+                    <button class="btn" style="margin-top: 16px; width: auto;" onclick="processAdjustments()">🔄 Process Endorsements & Chargebacks</button>
+                </div>
+
+                <div id="adjustmentsSummary" style="display: none;">
+                    <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 12px;">Adjustments Summary:</h3>
+                    <div id="adjustmentsDetails"></div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn" onclick="exportResults()">📊 Export to Excel</button>
+                <button class="btn btn-secondary" onclick="reset()">🔄 Check Another Statement</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBUgi5nsyxx0I8JyKT8UG4Nxb7MUr6LIUM",
+            authDomain: "new-business-log.firebaseapp.com",
+            projectId: "new-business-log",
+            storageBucket: "new-business-log.firebasestorage.app",
+            messagingSenderId: "634802326842",
+            appId: "1:634802326842:web:a490dc09d3b1e25fdfd403"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let businessTrackerPolicies = [];
+        let resultsData = {};
+        let endorsements = [];
+        let cancellations = [];
+
+        // Check auth
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                loadBusinessTracker();
+            } else {
+                window.location.href = 'login.html?redirect=commission-checker.html';
+            }
+        });
+
+        async function loadBusinessTracker() {
+            try {
+                const policiesRef = collection(db, 'policies');
+                const snapshot = await getDocs(policiesRef);
+                
+                businessTrackerPolicies = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                console.log(`Loaded ${businessTrackerPolicies.length} policies from Business Tracker`);
+            } catch (error) {
+                console.error('Error loading Business Tracker:', error);
+                alert('Error loading Business Tracker data');
+            }
+        }
+
+        // File upload handling
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('uploadCard').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+
+            try {
+                let names = [];
+
+                if (file.name.endsWith('.pdf')) {
+                    names = await parsePDF(file);
+                } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    names = await parseExcel(file);
+                } else if (file.name.endsWith('.csv')) {
+                    names = await parseCSV(file);
+                }
+
+                console.log(`Extracted ${names.length} names from statement`);
+                await processNames(names);
+
+            } catch (error) {
+                console.error('Error processing file:', error);
+                alert('Error processing file: ' + error.message);
+                reset();
+            }
+        });
+
+        async function parsePDF(file) {
+            // For PDF parsing, extract text and find customer names
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            
+            let text = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                text += content.items.map(item => item.str).join(' ') + '\n';
+            }
+
+            // Extract names (simple pattern: capital letters followed by space and more capital letters)
+            // This is a basic implementation - may need refinement based on actual PDF format
+            const namePattern = /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b/g;
+            const matches = text.match(namePattern) || [];
+            
+            // Remove duplicates
+            return [...new Set(matches)];
+        }
+
+        async function parseExcel(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                        // Find column with names (look for patterns)
+                        const names = [];
+                        for (const row of jsonData) {
+                            for (const cell of row) {
+                                if (typeof cell === 'string' && cell.match(/^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+$/)) {
+                                    names.push(cell);
+                                }
+                            }
+                        }
+
+                        resolve([...new Set(names)]);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function parseCSV(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const text = e.target.result;
+                        const lines = text.split('\n');
+                        const names = [];
+
+                        for (const line of lines) {
+                            const cells = line.split(',');
+                            for (const cell of cells) {
+                                const cleaned = cell.replace(/"/g, '').trim();
+                                if (cleaned.match(/^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+$/)) {
+                                    names.push(cleaned);
+                                }
+                            }
+                        }
+
+                        resolve([...new Set(names)]);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        function fuzzyMatch(name1, name2) {
+            // Simple fuzzy matching - normalize and compare
+            const normalize = (str) => str.toLowerCase().replace(/[^a-z]/g, '');
+            const n1 = normalize(name1);
+            const n2 = normalize(name2);
+
+            // Exact match after normalization
+            if (n1 === n2) return true;
+
+            // Check if one contains the other (handles "John Doe" vs "Doe, John")
+            if (n1.includes(n2) || n2.includes(n1)) return true;
+
+            // Calculate Levenshtein distance for similarity
+            const distance = levenshteinDistance(n1, n2);
+            const maxLen = Math.max(n1.length, n2.length);
+            const similarity = 1 - distance / maxLen;
+
+            return similarity >= 0.85; // 85% similarity threshold
+        }
+
+        function levenshteinDistance(str1, str2) {
+            const matrix = [];
+
+            for (let i = 0; i <= str2.length; i++) {
+                matrix[i] = [i];
+            }
+
+            for (let j = 0; j <= str1.length; j++) {
+                matrix[0][j] = j;
+            }
+
+            for (let i = 1; i <= str2.length; i++) {
+                for (let j = 1; j <= str1.length; j++) {
+                    if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+
+            return matrix[str2.length][str1.length];
+        }
+
+        async function processNames(statementNames) {
+            const newBusiness = [];
+            const rewrites = [];
+            const renewals = [];
+            const missingPolicies = [];
+
+            // Get date from 12 months ago for rolling window
+            const twelveMonthsAgo = new Date();
+            twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+            for (const name of statementNames) {
+                // Find matching policy in Business Tracker
+                const match = businessTrackerPolicies.find(policy => 
+                    fuzzyMatch(policy.customer, name)
+                );
+
+                if (match) {
+                    // Check if it's within 12-month window
+                    const policyDate = new Date(match.date);
+                    const isRecent = policyDate >= twelveMonthsAgo;
+
+                    // Check if it's a re-write
+                    const isRewrite = match.referralSource && 
+                        match.referralSource.toLowerCase().includes('re-write');
+
+                    if (isRewrite) {
+                        rewrites.push({
+                            name: name,
+                            producer: match.producer,
+                            matchedName: match.customer,
+                            date: match.date
+                        });
+                    } else if (isRecent) {
+                        newBusiness.push({
+                            name: name,
+                            producer: match.producer,
+                            matchedName: match.customer,
+                            date: match.date
+                        });
+                    } else {
+                        // Policy older than 12 months = renewal
+                        renewals.push({ name: name });
+                    }
+                } else {
+                    // Not in tracker - could be renewal OR missing new business
+                    // Flag as potentially missing if name pattern suggests it's not a renewal
+                    // (This is a heuristic - you may want to manually verify)
+                    missingPolicies.push({ name: name });
+                    renewals.push({ name: name });
+                }
+            }
+
+            resultsData = { newBusiness, rewrites, renewals, missingPolicies };
+            displayResults();
+        }
+
+        function displayResults() {
+            const { newBusiness, rewrites, renewals, missingPolicies } = resultsData;
+
+            // Update counts
+            document.getElementById('newBusinessCount').textContent = newBusiness.length;
+            document.getElementById('rewriteCount').textContent = rewrites.length;
+            document.getElementById('renewalCount').textContent = renewals.length;
+
+            // Display lists
+            document.getElementById('newBusinessList').innerHTML = newBusiness
+                .map(item => `<div class="name-item">${item.name} (${item.producer}) - ${item.date}</div>`)
+                .join('') || '<div class="name-item">None found</div>';
+
+            document.getElementById('rewriteList').innerHTML = rewrites
+                .map(item => `<div class="name-item">${item.name} (${item.producer}) - ${item.date}</div>`)
+                .join('') || '<div class="name-item">None found</div>';
+
+            document.getElementById('renewalList').innerHTML = renewals
+                .map(item => `<div class="name-item">${item.name}</div>`)
+                .join('') || '<div class="name-item">None found</div>';
+
+            // Show missing policies alert if any
+            if (missingPolicies.length > 0) {
+                document.getElementById('missingPoliciesCard').style.display = 'block';
+                document.getElementById('missingPoliciesList').innerHTML = missingPolicies
+                    .map(item => `<div class="name-item" style="color: #92400e; font-weight: 600;">⚠️ ${item.name}</div>`)
+                    .join('');
+            }
+
+            // Calculate producer totals
+            calculateProducerTotals();
+
+            // Show results
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('results').classList.remove('hidden');
+        }
+
+        function calculateProducerTotals() {
+            const { newBusiness, rewrites } = resultsData;
+            const producerTotals = {};
+            
+            newBusiness.forEach(item => {
+                if (!producerTotals[item.producer]) {
+                    producerTotals[item.producer] = { 
+                        new: 0, 
+                        rewrites: 0,
+                        endorsements: 0,
+                        chargebacks: 0
+                    };
+                }
+                producerTotals[item.producer].new++;
+            });
+
+            rewrites.forEach(item => {
+                if (!producerTotals[item.producer]) {
+                    producerTotals[item.producer] = { 
+                        new: 0, 
+                        rewrites: 0,
+                        endorsements: 0,
+                        chargebacks: 0
+                    };
+                }
+                producerTotals[item.producer].rewrites++;
+            });
+
+            // Add endorsements
+            endorsements.forEach(item => {
+                if (producerTotals[item.producer]) {
+                    producerTotals[item.producer].endorsements++;
+                }
+            });
+
+            // Add chargebacks
+            cancellations.forEach(item => {
+                if (producerTotals[item.producer]) {
+                    producerTotals[item.producer].chargebacks++;
+                }
+            });
+
+            // Display producer summary
+            const producerList = document.getElementById('producerList');
+            let grandTotal = 0;
+
+            producerList.innerHTML = Object.entries(producerTotals)
+                .map(([producer, counts]) => {
+                    const base = counts.new - counts.rewrites;
+                    const adjusted = base + counts.endorsements - counts.chargebacks;
+                    grandTotal += adjusted;
+
+                    let calcText = `${counts.new} new - ${counts.rewrites} re-writes`;
+                    if (counts.endorsements > 0) {
+                        calcText += ` + ${counts.endorsements} endorsements`;
+                    }
+                    if (counts.chargebacks > 0) {
+                        calcText += ` - ${counts.chargebacks} chargebacks`;
+                    }
+
+                    return `
+                        <div class="producer-row">
+                            <div>
+                                <div class="producer-name">${producer}</div>
+                                <div class="producer-calc">${calcText}</div>
+                            </div>
+                            <div class="producer-total">${adjusted}</div>
+                        </div>
+                    `;
+                })
+                .join('');
+
+            // Update grand total
+            document.getElementById('grandTotal').textContent = grandTotal;
+        }
+
+        window.processAdjustments = async function() {
+            const endorsementsFile = document.getElementById('endorsementsInput').files[0];
+            const cancellationsFile = document.getElementById('cancellationsInput').files[0];
+
+            if (!endorsementsFile && !cancellationsFile) {
+                alert('Please upload at least one file (endorsements or cancellations)');
+                return;
+            }
+
+            try {
+                // Parse endorsements
+                if (endorsementsFile) {
+                    const endorsementData = await parseExcel(endorsementsFile);
+                    endorsements = endorsementData.map(name => {
+                        // Find producer from business tracker
+                        const match = businessTrackerPolicies.find(p => fuzzyMatch(p.customer, name));
+                        return {
+                            name: name,
+                            producer: match ? match.producer : 'Unknown'
+                        };
+                    });
+                    console.log(`Loaded ${endorsements.length} endorsements`);
+                }
+
+                // Parse cancellations
+                if (cancellationsFile) {
+                    const cancellationData = await parseExcel(cancellationsFile);
+                    cancellations = cancellationData.map(name => {
+                        // Find producer from business tracker
+                        const match = businessTrackerPolicies.find(p => fuzzyMatch(p.customer, name));
+                        return {
+                            name: name,
+                            producer: match ? match.producer : 'Unknown'
+                        };
+                    });
+                    console.log(`Loaded ${cancellations.length} cancellations`);
+                }
+
+                // Show adjustments summary
+                const adjustmentsSummary = document.getElementById('adjustmentsSummary');
+                const adjustmentsDetails = document.getElementById('adjustmentsDetails');
+
+                adjustmentsSummary.style.display = 'block';
+
+                let summaryHTML = `
+                    <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; border: 1px solid #86efac; margin-bottom: 12px;">
+                        <div style="font-size: 16px; font-weight: 600; color: #166534;">
+                            ✅ Endorsements: ${endorsements.length} policies
+                        </div>
+                        ${endorsements.length > 0 ? `
+                            <div style="font-size: 13px; color: #15803d; margin-top: 8px; font-family: 'JetBrains Mono', monospace;">
+                                ${endorsements.map(e => `${e.name} (${e.producer})`).join('<br>')}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div style="background: #fef2f2; padding: 16px; border-radius: 8px; border: 1px solid #fca5a5;">
+                        <div style="font-size: 16px; font-weight: 600; color: #991b1b;">
+                            ❌ Chargebacks: ${cancellations.length} policies
+                        </div>
+                        ${cancellations.length > 0 ? `
+                            <div style="font-size: 13px; color: #991b1b; margin-top: 8px; font-family: 'JetBrains Mono', monospace;">
+                                ${cancellations.map(c => `${c.name} (${c.producer})`).join('<br>')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                adjustmentsDetails.innerHTML = summaryHTML;
+
+                // Recalculate producer totals
+                calculateProducerTotals();
+
+                alert('Adjustments processed! Producer totals have been updated.');
+
+            } catch (error) {
+                console.error('Error processing adjustments:', error);
+                alert('Error processing files: ' + error.message);
+            }
+        };
+
+        window.exportResults = function() {
+            const { newBusiness, rewrites, renewals, missingPolicies } = resultsData;
+            
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            
+            // New Business sheet
+            const nbSheet = XLSX.utils.json_to_sheet(
+                newBusiness.map(item => ({
+                    'Customer': item.name,
+                    'Producer': item.producer,
+                    'Date': item.date,
+                    'Type': 'New Business'
+                }))
+            );
+            XLSX.utils.book_append_sheet(wb, nbSheet, 'New Business');
+            
+            // Re-Writes sheet
+            const rwSheet = XLSX.utils.json_to_sheet(
+                rewrites.map(item => ({
+                    'Customer': item.name,
+                    'Producer': item.producer,
+                    'Date': item.date,
+                    'Type': 'Re-Write (Deduct)'
+                }))
+            );
+            XLSX.utils.book_append_sheet(wb, rwSheet, 'Re-Writes');
+
+            // Endorsements sheet
+            if (endorsements.length > 0) {
+                const endSheet = XLSX.utils.json_to_sheet(
+                    endorsements.map(item => ({
+                        'Customer': item.name,
+                        'Producer': item.producer,
+                        'Type': 'Endorsement (Add)'
+                    }))
+                );
+                XLSX.utils.book_append_sheet(wb, endSheet, 'Endorsements');
+            }
+
+            // Cancellations sheet
+            if (cancellations.length > 0) {
+                const canSheet = XLSX.utils.json_to_sheet(
+                    cancellations.map(item => ({
+                        'Customer': item.name,
+                        'Producer': item.producer,
+                        'Type': 'Cancellation (Deduct)'
+                    }))
+                );
+                XLSX.utils.book_append_sheet(wb, canSheet, 'Cancellations');
+            }
+
+            // Missing Policies sheet
+            if (missingPolicies.length > 0) {
+                const missSheet = XLSX.utils.json_to_sheet(
+                    missingPolicies.map(item => ({
+                        'Customer': item.name,
+                        'Status': 'MISSING - Verify Manually'
+                    }))
+                );
+                XLSX.utils.book_append_sheet(wb, missSheet, 'Missing Policies');
+            }
+            
+            // Renewals sheet
+            const rnSheet = XLSX.utils.json_to_sheet(
+                renewals.map(item => ({
+                    'Customer': item.name,
+                    'Type': 'Renewal (No Commission)'
+                }))
+            );
+            XLSX.utils.book_append_sheet(wb, rnSheet, 'Renewals');
+            
+            // Download
+            XLSX.writeFile(wb, 'Commission_Report.xlsx');
+        };
+
+        window.reset = function() {
+            document.getElementById('uploadCard').classList.remove('hidden');
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('fileInput').value = '';
+            document.getElementById('endorsementsInput').value = '';
+            document.getElementById('cancellationsInput').value = '';
+            document.getElementById('adjustmentsSummary').style.display = 'none';
+            document.getElementById('missingPoliciesCard').style.display = 'none';
+            endorsements = [];
+            cancellations = [];
+            resultsData = {};
+        };
+    </script>
+</body>
+</html>
