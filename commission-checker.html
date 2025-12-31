@@ -349,9 +349,10 @@
                 <div id="producerList"></div>
                 <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 20px; font-weight: 700;">
-                        <div>TOTAL COMMISSIONABLE POLICIES:</div>
-                        <div style="color: #6366f1; font-size: 32px; font-family: 'JetBrains Mono', monospace;" id="grandTotal">0</div>
+                        <div>TOTAL COMMISSION TO PAY:</div>
+                        <div style="color: #10b981; font-size: 36px; font-family: 'JetBrains Mono', monospace;" id="grandTotal">$0.00</div>
                     </div>
+                    <div style="margin-top: 12px; font-size: 14px; color: #64748b; text-align: right;" id="grandTotalBreakdown"></div>
                 </div>
             </div>
 
@@ -1287,21 +1288,31 @@
             // Display producer summary
             const producerList = document.getElementById('producerList');
             let grandTotal = 0;
+            let totalNewAmount = 0;
+            let totalRewriteAmount = 0;
+            let totalEndorsementAmount = 0;
+            let totalChargebackAmount = 0;
+            let totalPolicies = 0;
 
             producerList.innerHTML = Object.entries(producerTotals)
                 .map(([producer, totals]) => {
                     const netAmount = totals.newAmount - totals.rewriteAmount + totals.endorsementAmount - totals.chargebackAmount;
                     grandTotal += netAmount;
+                    totalNewAmount += totals.newAmount;
+                    totalRewriteAmount += totals.rewriteAmount;
+                    totalEndorsementAmount += totals.endorsementAmount;
+                    totalChargebackAmount += totals.chargebackAmount;
+                    totalPolicies += totals.newCount;
 
                     let calcText = `$${totals.newAmount.toFixed(2)} new (${totals.newCount})`;
                     if (totals.rewriteCount > 0) {
                         calcText += ` - $${totals.rewriteAmount.toFixed(2)} re-writes (${totals.rewriteCount})`;
                     }
                     if (totals.endorsementCount > 0) {
-                        calcText += ` + $${totals.endorsementAmount.toFixed(2)} endorsements (${totals.endorsementCount} - last 12 months only)`;
+                        calcText += ` + $${totals.endorsementAmount.toFixed(2)} endorsements (${totals.endorsementCount})`;
                     }
                     if (totals.chargebackCount > 0) {
-                        calcText += ` - $${totals.chargebackAmount.toFixed(2)} chargebacks (${totals.chargebackCount} - last 12 months only)`;
+                        calcText += ` - $${totals.chargebackAmount.toFixed(2)} chargebacks (${totals.chargebackCount})`;
                     }
 
                     return `
@@ -1316,8 +1327,24 @@
                 })
                 .join('');
 
-            // Update grand total
+            // Update grand total with dollar amount
             document.getElementById('grandTotal').textContent = `$${grandTotal.toFixed(2)}`;
+            
+            // Update breakdown
+            let breakdownParts = [
+                `${totalPolicies} policies: $${totalNewAmount.toFixed(2)}`
+            ];
+            if (totalRewriteAmount > 0) {
+                breakdownParts.push(`re-writes: -$${totalRewriteAmount.toFixed(2)}`);
+            }
+            if (totalEndorsementAmount > 0) {
+                breakdownParts.push(`endorsements: +$${totalEndorsementAmount.toFixed(2)}`);
+            }
+            if (totalChargebackAmount > 0) {
+                breakdownParts.push(`chargebacks: -$${totalChargebackAmount.toFixed(2)}`);
+            }
+            
+            document.getElementById('grandTotalBreakdown').textContent = breakdownParts.join(' | ');
         }
 
         window.exportResults = function() {
