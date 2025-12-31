@@ -315,18 +315,22 @@
             <div class="upload-area" onclick="document.getElementById('fileInput').click()">
                 <div class="upload-icon">📄</div>
                 <div class="upload-text">Upload Commission Statement</div>
-                <div class="upload-subtext">PDF, Excel, or CSV format supported</div>
+                <div class="upload-subtext">Excel format (.xlsx) - Ivantage export</div>
             </div>
-            <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls,.csv">
+            <input type="file" id="fileInput" accept=".xlsx,.xls">
 
             <div class="info-box">
                 <h3>How It Works:</h3>
                 <p>
-                    1. Upload your commission statement (any format)<br>
-                    2. Tool extracts customer names<br>
-                    3. Checks each name against your Business Tracker<br>
-                    4. Identifies: New Business ✅, Re-Writes 🔄, and Renewals ❌<br>
-                    5. Calculates commissionable policies per producer (New Business - Re-Writes)
+                    1. Upload your Ivantage commission statement (Excel format)<br>
+                    2. Tool reads: Customer Name, Reason (New business/Renewal/Cancellation), and Commission Amount<br>
+                    3. Checks each "New business" against your Business Tracker<br>
+                    4. Calculates total commission per producer:<br>
+                    &nbsp;&nbsp;&nbsp;• New Business: <strong>Add</strong> commission<br>
+                    &nbsp;&nbsp;&nbsp;• Re-Writes: <strong>Deduct</strong> commission<br>
+                    &nbsp;&nbsp;&nbsp;• Endorsements/Policy Changes: <strong>Add</strong> if positive, <strong>Deduct</strong> if negative<br>
+                    &nbsp;&nbsp;&nbsp;• Cancellations: <strong>Deduct</strong> commission<br>
+                    5. Shows total dollars to pay each producer
                 </p>
             </div>
         </div>
@@ -393,39 +397,6 @@
                 <p style="color: #78350f; margin-top: 12px; font-size: 14px;">💡 <strong>Action:</strong> Manually verify these names and add them to the Business Tracker if they are indeed new business.</p>
             </div>
 
-            <!-- Endorsements & Chargebacks Section -->
-            <div class="producer-summary" style="border: 2px solid #3b82f6;">
-                <h2 style="color: #1e40af;">📝 Endorsements & Chargebacks (12-Month Rolling)</h2>
-                
-                <div style="background: #eff6ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 12px; color: #1e40af;">Upload Additional Data:</h3>
-                    <p style="font-size: 14px; color: #1e3a8a; margin-bottom: 16px;">
-                        Upload endorsement premium and cancellation data to calculate accurate commissions.
-                    </p>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                        <div>
-                            <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Endorsements (Excel/CSV):</label>
-                            <input type="file" id="endorsementsInput" accept=".xlsx,.xls,.csv" style="display: block; width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                            <p style="font-size: 12px; color: #64748b; margin-top: 4px;">Columns: Customer Name, Premium, Producer</p>
-                        </div>
-                        
-                        <div>
-                            <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Cancellations (Excel/CSV):</label>
-                            <input type="file" id="cancellationsInput" accept=".xlsx,.xls,.csv" style="display: block; width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                            <p style="font-size: 12px; color: #64748b; margin-top: 4px;">Columns: Customer Name, Chargeback Amount, Producer</p>
-                        </div>
-                    </div>
-                    
-                    <button class="btn" style="margin-top: 16px; width: auto;" onclick="processAdjustments()">🔄 Process Endorsements & Chargebacks</button>
-                </div>
-
-                <div id="adjustmentsSummary" style="display: none;">
-                    <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 12px;">Adjustments Summary:</h3>
-                    <div id="adjustmentsDetails"></div>
-                </div>
-            </div>
-
             <div class="actions">
                 <button class="btn" onclick="exportResults()">📊 Export to Excel</button>
                 <button class="btn btn-secondary" onclick="reset()">🔄 Check Another Statement</button>
@@ -456,8 +427,6 @@
         let currentUser = null;
         let businessTrackerPolicies = [];
         let resultsData = {};
-        let endorsements = [];
-        let cancellations = [];
 
         // Check auth
         onAuthStateChanged(auth, (user) => {
@@ -495,18 +464,23 @@
             document.getElementById('loading').classList.remove('hidden');
 
             try {
-                let names = [];
+                let records = [];
 
                 if (file.name.endsWith('.pdf')) {
-                    names = await parsePDF(file);
+                    // PDF not fully supported for this format - show error
+                    alert('Please use Excel format for commission statements. PDF parsing is not yet supported for this statement type.');
+                    reset();
+                    return;
                 } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                    names = await parseExcel(file);
+                    records = await parseExcel(file);
                 } else if (file.name.endsWith('.csv')) {
-                    names = await parseCSV(file);
+                    alert('Please convert CSV to Excel format for best results.');
+                    reset();
+                    return;
                 }
 
-                console.log(`Extracted ${names.length} names from statement`);
-                await processNames(names);
+                console.log(`Extracted ${records.length} records from statement`);
+                await processRecords(records);
 
             } catch (error) {
                 console.error('Error processing file:', error);
@@ -546,17 +520,43 @@
                         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                         const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
-                        // Find column with names (look for patterns)
-                        const names = [];
-                        for (const row of jsonData) {
-                            for (const cell of row) {
-                                if (typeof cell === 'string' && cell.match(/^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+$/)) {
-                                    names.push(cell);
-                                }
+                        // Find header row (contains "Insured Name")
+                        let headerRowIndex = -1;
+                        for (let i = 0; i < jsonData.length; i++) {
+                            if (jsonData[i].includes('Insured Name')) {
+                                headerRowIndex = i;
+                                break;
                             }
                         }
 
-                        resolve([...new Set(names)]);
+                        if (headerRowIndex === -1) {
+                            reject(new Error('Could not find header row with "Insured Name"'));
+                            return;
+                        }
+
+                        const headers = jsonData[headerRowIndex];
+                        const nameCol = headers.indexOf('Insured Name');
+                        const reasonCol = headers.indexOf('Reason');
+                        const amountCol = headers.indexOf('Amount');
+
+                        if (nameCol === -1 || reasonCol === -1 || amountCol === -1) {
+                            reject(new Error('Required columns not found'));
+                            return;
+                        }
+
+                        const records = [];
+                        for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            if (row[nameCol]) {
+                                records.push({
+                                    name: row[nameCol],
+                                    reason: row[reasonCol] || '',
+                                    amount: parseFloat(row[amountCol]) || 0
+                                });
+                            }
+                        }
+
+                        resolve(records);
                     } catch (error) {
                         reject(error);
                     }
@@ -643,77 +643,138 @@
             return matrix[str2.length][str1.length];
         }
 
-        async function processNames(statementNames) {
+        async function processRecords(records) {
             const newBusiness = [];
             const rewrites = [];
             const renewals = [];
+            const cancellations = [];
+            const endorsements = [];
             const missingPolicies = [];
 
             // Get date from 12 months ago for rolling window
             const twelveMonthsAgo = new Date();
             twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-            for (const name of statementNames) {
-                // Find matching policy in Business Tracker
-                const match = businessTrackerPolicies.find(policy => 
-                    fuzzyMatch(policy.customer, name)
-                );
+            for (const record of records) {
+                const reason = record.reason.toLowerCase();
+                
+                // Categorize by reason
+                if (reason.includes('new business')) {
+                    // Check if in Business Tracker
+                    const match = businessTrackerPolicies.find(policy => 
+                        fuzzyMatch(policy.customer, record.name)
+                    );
 
-                if (match) {
-                    // Check if it's within 12-month window
-                    const policyDate = new Date(match.date);
-                    const isRecent = policyDate >= twelveMonthsAgo;
+                    if (match) {
+                        // Check if within 12-month window
+                        const policyDate = new Date(match.date);
+                        const isRecent = policyDate >= twelveMonthsAgo;
 
-                    // Check if it's a re-write
-                    const isRewrite = match.referralSource && 
-                        match.referralSource.toLowerCase().includes('re-write');
+                        if (!isRecent) {
+                            // Policy older than 12 months - shouldn't be "new business"
+                            missingPolicies.push({
+                                name: record.name,
+                                amount: record.amount,
+                                reason: 'Policy older than 12 months'
+                            });
+                            continue;
+                        }
 
-                    if (isRewrite) {
-                        rewrites.push({
-                            name: name,
-                            producer: match.producer,
-                            matchedName: match.customer,
-                            date: match.date
-                        });
-                    } else if (isRecent) {
-                        newBusiness.push({
-                            name: name,
-                            producer: match.producer,
-                            matchedName: match.customer,
-                            date: match.date
-                        });
+                        // Check if it's a re-write
+                        const isRewrite = match.referralSource && 
+                            match.referralSource.toLowerCase().includes('re-write');
+
+                        if (isRewrite) {
+                            rewrites.push({
+                                name: record.name,
+                                producer: match.producer,
+                                matchedName: match.customer,
+                                date: match.date,
+                                amount: record.amount
+                            });
+                        } else {
+                            newBusiness.push({
+                                name: record.name,
+                                producer: match.producer,
+                                matchedName: match.customer,
+                                date: match.date,
+                                amount: record.amount
+                            });
+                        }
                     } else {
-                        // Policy older than 12 months = renewal
-                        renewals.push({ name: name });
+                        // Not in tracker but marked as "new business" - FLAG IT
+                        missingPolicies.push({
+                            name: record.name,
+                            amount: record.amount,
+                            reason: 'Not found in Business Tracker'
+                        });
                     }
-                } else {
-                    // Not in tracker - could be renewal OR missing new business
-                    // Flag as potentially missing if name pattern suggests it's not a renewal
-                    // (This is a heuristic - you may want to manually verify)
-                    missingPolicies.push({ name: name });
-                    renewals.push({ name: name });
+                } else if (reason.includes('renew')) {
+                    // Renewal - no commission
+                    renewals.push({
+                        name: record.name,
+                        amount: record.amount
+                    });
+                } else if (reason.includes('cancel')) {
+                    // Cancellation - deduct from commission
+                    const match = businessTrackerPolicies.find(policy => 
+                        fuzzyMatch(policy.customer, record.name)
+                    );
+
+                    if (match) {
+                        cancellations.push({
+                            name: record.name,
+                            producer: match.producer,
+                            amount: Math.abs(record.amount) // Make positive for display
+                        });
+                    }
+                } else if (reason.includes('policy change') || reason.includes('endorsement')) {
+                    // Endorsement - add to commission
+                    const match = businessTrackerPolicies.find(policy => 
+                        fuzzyMatch(policy.customer, record.name)
+                    );
+
+                    if (match && record.amount > 0) {
+                        endorsements.push({
+                            name: record.name,
+                            producer: match.producer,
+                            amount: record.amount
+                        });
+                    } else if (match && record.amount < 0) {
+                        // Negative endorsement = chargeback
+                        cancellations.push({
+                            name: record.name,
+                            producer: match.producer,
+                            amount: Math.abs(record.amount)
+                        });
+                    }
                 }
             }
 
-            resultsData = { newBusiness, rewrites, renewals, missingPolicies };
+            resultsData = { newBusiness, rewrites, renewals, cancellations, endorsements, missingPolicies };
             displayResults();
         }
 
         function displayResults() {
-            const { newBusiness, rewrites, renewals, missingPolicies } = resultsData;
+            const { newBusiness, rewrites, renewals, cancellations, endorsements, missingPolicies } = resultsData;
 
-            // Update counts
-            document.getElementById('newBusinessCount').textContent = newBusiness.length;
-            document.getElementById('rewriteCount').textContent = rewrites.length;
-            document.getElementById('renewalCount').textContent = renewals.length;
+            // Calculate totals
+            const nbTotal = newBusiness.reduce((sum, item) => sum + item.amount, 0);
+            const rwTotal = rewrites.reduce((sum, item) => sum + item.amount, 0);
+            const rnTotal = renewals.reduce((sum, item) => sum + item.amount, 0);
 
-            // Display lists
+            // Update counts with dollar amounts
+            document.getElementById('newBusinessCount').innerHTML = `${newBusiness.length}<div style="font-size:18px;font-weight:600;margin-top:8px;">$${nbTotal.toFixed(2)}</div>`;
+            document.getElementById('rewriteCount').innerHTML = `${rewrites.length}<div style="font-size:18px;font-weight:600;margin-top:8px;">$${rwTotal.toFixed(2)}</div>`;
+            document.getElementById('renewalCount').innerHTML = `${renewals.length}<div style="font-size:18px;font-weight:600;margin-top:8px;">$${rnTotal.toFixed(2)}</div>`;
+
+            // Display lists with amounts
             document.getElementById('newBusinessList').innerHTML = newBusiness
-                .map(item => `<div class="name-item">${item.name} (${item.producer}) - ${item.date}</div>`)
+                .map(item => `<div class="name-item">${item.name} (${item.producer}) - $${item.amount.toFixed(2)}</div>`)
                 .join('') || '<div class="name-item">None found</div>';
 
             document.getElementById('rewriteList').innerHTML = rewrites
-                .map(item => `<div class="name-item">${item.name} (${item.producer}) - ${item.date}</div>`)
+                .map(item => `<div class="name-item">${item.name} (${item.producer}) - $${item.amount.toFixed(2)}</div>`)
                 .join('') || '<div class="name-item">None found</div>';
 
             document.getElementById('renewalList').innerHTML = renewals
@@ -724,7 +785,7 @@
             if (missingPolicies.length > 0) {
                 document.getElementById('missingPoliciesCard').style.display = 'block';
                 document.getElementById('missingPoliciesList').innerHTML = missingPolicies
-                    .map(item => `<div class="name-item" style="color: #92400e; font-weight: 600;">⚠️ ${item.name}</div>`)
+                    .map(item => `<div class="name-item" style="color: #92400e; font-weight: 600;">⚠️ ${item.name} - $${item.amount.toFixed(2)} (${item.reason})</div>`)
                     .join('');
             }
 
@@ -737,44 +798,58 @@
         }
 
         function calculateProducerTotals() {
-            const { newBusiness, rewrites } = resultsData;
+            const { newBusiness, rewrites, cancellations, endorsements } = resultsData;
             const producerTotals = {};
             
+            // Add new business commissions
             newBusiness.forEach(item => {
                 if (!producerTotals[item.producer]) {
-                    producerTotals[item.producer] = { 
-                        new: 0, 
-                        rewrites: 0,
-                        endorsements: 0,
-                        chargebacks: 0
+                    producerTotals[item.producer] = {
+                        newAmount: 0,
+                        rewriteAmount: 0,
+                        endorsementAmount: 0,
+                        chargebackAmount: 0,
+                        newCount: 0,
+                        rewriteCount: 0,
+                        endorsementCount: 0,
+                        chargebackCount: 0
                     };
                 }
-                producerTotals[item.producer].new++;
+                producerTotals[item.producer].newAmount += item.amount;
+                producerTotals[item.producer].newCount++;
             });
 
+            // Deduct re-writes
             rewrites.forEach(item => {
                 if (!producerTotals[item.producer]) {
-                    producerTotals[item.producer] = { 
-                        new: 0, 
-                        rewrites: 0,
-                        endorsements: 0,
-                        chargebacks: 0
+                    producerTotals[item.producer] = {
+                        newAmount: 0,
+                        rewriteAmount: 0,
+                        endorsementAmount: 0,
+                        chargebackAmount: 0,
+                        newCount: 0,
+                        rewriteCount: 0,
+                        endorsementCount: 0,
+                        chargebackCount: 0
                     };
                 }
-                producerTotals[item.producer].rewrites++;
+                producerTotals[item.producer].rewriteAmount += item.amount;
+                producerTotals[item.producer].rewriteCount++;
             });
 
             // Add endorsements
             endorsements.forEach(item => {
                 if (producerTotals[item.producer]) {
-                    producerTotals[item.producer].endorsements++;
+                    producerTotals[item.producer].endorsementAmount += item.amount;
+                    producerTotals[item.producer].endorsementCount++;
                 }
             });
 
-            // Add chargebacks
+            // Deduct chargebacks
             cancellations.forEach(item => {
                 if (producerTotals[item.producer]) {
-                    producerTotals[item.producer].chargebacks++;
+                    producerTotals[item.producer].chargebackAmount += item.amount;
+                    producerTotals[item.producer].chargebackCount++;
                 }
             });
 
@@ -783,17 +858,19 @@
             let grandTotal = 0;
 
             producerList.innerHTML = Object.entries(producerTotals)
-                .map(([producer, counts]) => {
-                    const base = counts.new - counts.rewrites;
-                    const adjusted = base + counts.endorsements - counts.chargebacks;
-                    grandTotal += adjusted;
+                .map(([producer, totals]) => {
+                    const netAmount = totals.newAmount - totals.rewriteAmount + totals.endorsementAmount - totals.chargebackAmount;
+                    grandTotal += netAmount;
 
-                    let calcText = `${counts.new} new - ${counts.rewrites} re-writes`;
-                    if (counts.endorsements > 0) {
-                        calcText += ` + ${counts.endorsements} endorsements`;
+                    let calcText = `$${totals.newAmount.toFixed(2)} new (${totals.newCount})`;
+                    if (totals.rewriteCount > 0) {
+                        calcText += ` - $${totals.rewriteAmount.toFixed(2)} re-writes (${totals.rewriteCount})`;
                     }
-                    if (counts.chargebacks > 0) {
-                        calcText += ` - ${counts.chargebacks} chargebacks`;
+                    if (totals.endorsementCount > 0) {
+                        calcText += ` + $${totals.endorsementAmount.toFixed(2)} endorsements (${totals.endorsementCount})`;
+                    }
+                    if (totals.chargebackCount > 0) {
+                        calcText += ` - $${totals.chargebackAmount.toFixed(2)} chargebacks (${totals.chargebackCount})`;
                     }
 
                     return `
@@ -802,101 +879,70 @@
                                 <div class="producer-name">${producer}</div>
                                 <div class="producer-calc">${calcText}</div>
                             </div>
-                            <div class="producer-total">${adjusted}</div>
+                            <div class="producer-total">$${netAmount.toFixed(2)}</div>
                         </div>
                     `;
                 })
                 .join('');
 
             // Update grand total
-            document.getElementById('grandTotal').textContent = grandTotal;
+            document.getElementById('grandTotal').textContent = `$${grandTotal.toFixed(2)}`;
         }
 
-        window.processAdjustments = async function() {
-            const endorsementsFile = document.getElementById('endorsementsInput').files[0];
-            const cancellationsFile = document.getElementById('cancellationsInput').files[0];
-
-            if (!endorsementsFile && !cancellationsFile) {
-                alert('Please upload at least one file (endorsements or cancellations)');
-                return;
-            }
-
-            try {
-                // Parse endorsements
-                if (endorsementsFile) {
-                    const endorsementData = await parseExcel(endorsementsFile);
-                    endorsements = endorsementData.map(name => {
-                        // Find producer from business tracker
-                        const match = businessTrackerPolicies.find(p => fuzzyMatch(p.customer, name));
-                        return {
-                            name: name,
-                            producer: match ? match.producer : 'Unknown'
-                        };
-                    });
-                    console.log(`Loaded ${endorsements.length} endorsements`);
-                }
-
-                // Parse cancellations
-                if (cancellationsFile) {
-                    const cancellationData = await parseExcel(cancellationsFile);
-                    cancellations = cancellationData.map(name => {
-                        // Find producer from business tracker
-                        const match = businessTrackerPolicies.find(p => fuzzyMatch(p.customer, name));
-                        return {
-                            name: name,
-                            producer: match ? match.producer : 'Unknown'
-                        };
-                    });
-                    console.log(`Loaded ${cancellations.length} cancellations`);
-                }
-
-                // Show adjustments summary
-                const adjustmentsSummary = document.getElementById('adjustmentsSummary');
-                const adjustmentsDetails = document.getElementById('adjustmentsDetails');
-
-                adjustmentsSummary.style.display = 'block';
-
-                let summaryHTML = `
-                    <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; border: 1px solid #86efac; margin-bottom: 12px;">
-                        <div style="font-size: 16px; font-weight: 600; color: #166534;">
-                            ✅ Endorsements: ${endorsements.length} policies
-                        </div>
-                        ${endorsements.length > 0 ? `
-                            <div style="font-size: 13px; color: #15803d; margin-top: 8px; font-family: 'JetBrains Mono', monospace;">
-                                ${endorsements.map(e => `${e.name} (${e.producer})`).join('<br>')}
-                            </div>
-                        ` : ''}
-                    </div>
-                    <div style="background: #fef2f2; padding: 16px; border-radius: 8px; border: 1px solid #fca5a5;">
-                        <div style="font-size: 16px; font-weight: 600; color: #991b1b;">
-                            ❌ Chargebacks: ${cancellations.length} policies
-                        </div>
-                        ${cancellations.length > 0 ? `
-                            <div style="font-size: 13px; color: #991b1b; margin-top: 8px; font-family: 'JetBrains Mono', monospace;">
-                                ${cancellations.map(c => `${c.name} (${c.producer})`).join('<br>')}
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-
-                adjustmentsDetails.innerHTML = summaryHTML;
-
-                // Recalculate producer totals
-                calculateProducerTotals();
-
-                alert('Adjustments processed! Producer totals have been updated.');
-
-            } catch (error) {
-                console.error('Error processing adjustments:', error);
-                alert('Error processing files: ' + error.message);
-            }
-        };
-
         window.exportResults = function() {
-            const { newBusiness, rewrites, renewals, missingPolicies } = resultsData;
+            const { newBusiness, rewrites, renewals, cancellations, endorsements, missingPolicies } = resultsData;
             
             // Create workbook
             const wb = XLSX.utils.book_new();
+            
+            // Producer Summary Sheet
+            const producerTotals = {};
+            
+            newBusiness.forEach(item => {
+                if (!producerTotals[item.producer]) {
+                    producerTotals[item.producer] = {
+                        'Producer': item.producer,
+                        'New Business $': 0,
+                        'Re-Writes $': 0,
+                        'Endorsements $': 0,
+                        'Chargebacks $': 0,
+                        'Net Commission $': 0
+                    };
+                }
+                producerTotals[item.producer]['New Business $'] += item.amount;
+            });
+
+            rewrites.forEach(item => {
+                if (producerTotals[item.producer]) {
+                    producerTotals[item.producer]['Re-Writes $'] += item.amount;
+                }
+            });
+
+            endorsements.forEach(item => {
+                if (producerTotals[item.producer]) {
+                    producerTotals[item.producer]['Endorsements $'] += item.amount;
+                }
+            });
+
+            cancellations.forEach(item => {
+                if (producerTotals[item.producer]) {
+                    producerTotals[item.producer]['Chargebacks $'] += item.amount;
+                }
+            });
+
+            // Calculate net for each producer
+            Object.values(producerTotals).forEach(p => {
+                p['Net Commission $'] = p['New Business $'] - p['Re-Writes $'] + p['Endorsements $'] - p['Chargebacks $'];
+                // Round to 2 decimals
+                p['New Business $'] = Math.round(p['New Business $'] * 100) / 100;
+                p['Re-Writes $'] = Math.round(p['Re-Writes $'] * 100) / 100;
+                p['Endorsements $'] = Math.round(p['Endorsements $'] * 100) / 100;
+                p['Chargebacks $'] = Math.round(p['Chargebacks $'] * 100) / 100;
+                p['Net Commission $'] = Math.round(p['Net Commission $'] * 100) / 100;
+            });
+
+            const summarySheet = XLSX.utils.json_to_sheet(Object.values(producerTotals));
+            XLSX.utils.book_append_sheet(wb, summarySheet, 'Producer Summary');
             
             // New Business sheet
             const nbSheet = XLSX.utils.json_to_sheet(
@@ -904,21 +950,25 @@
                     'Customer': item.name,
                     'Producer': item.producer,
                     'Date': item.date,
+                    'Commission $': Math.round(item.amount * 100) / 100,
                     'Type': 'New Business'
                 }))
             );
             XLSX.utils.book_append_sheet(wb, nbSheet, 'New Business');
             
             // Re-Writes sheet
-            const rwSheet = XLSX.utils.json_to_sheet(
-                rewrites.map(item => ({
-                    'Customer': item.name,
-                    'Producer': item.producer,
-                    'Date': item.date,
-                    'Type': 'Re-Write (Deduct)'
-                }))
-            );
-            XLSX.utils.book_append_sheet(wb, rwSheet, 'Re-Writes');
+            if (rewrites.length > 0) {
+                const rwSheet = XLSX.utils.json_to_sheet(
+                    rewrites.map(item => ({
+                        'Customer': item.name,
+                        'Producer': item.producer,
+                        'Date': item.date,
+                        'Commission $': Math.round(item.amount * 100) / 100,
+                        'Type': 'Re-Write (Deduct)'
+                    }))
+                );
+                XLSX.utils.book_append_sheet(wb, rwSheet, 'Re-Writes');
+            }
 
             // Endorsements sheet
             if (endorsements.length > 0) {
@@ -926,6 +976,7 @@
                     endorsements.map(item => ({
                         'Customer': item.name,
                         'Producer': item.producer,
+                        'Commission $': Math.round(item.amount * 100) / 100,
                         'Type': 'Endorsement (Add)'
                     }))
                 );
@@ -938,6 +989,7 @@
                     cancellations.map(item => ({
                         'Customer': item.name,
                         'Producer': item.producer,
+                        'Chargeback $': Math.round(item.amount * 100) / 100,
                         'Type': 'Cancellation (Deduct)'
                     }))
                 );
@@ -949,6 +1001,8 @@
                 const missSheet = XLSX.utils.json_to_sheet(
                     missingPolicies.map(item => ({
                         'Customer': item.name,
+                        'Commission $': Math.round(item.amount * 100) / 100,
+                        'Reason': item.reason,
                         'Status': 'MISSING - Verify Manually'
                     }))
                 );
@@ -959,13 +1013,15 @@
             const rnSheet = XLSX.utils.json_to_sheet(
                 renewals.map(item => ({
                     'Customer': item.name,
-                    'Type': 'Renewal (No Commission)'
+                    'Commission $': Math.round(item.amount * 100) / 100,
+                    'Type': 'Renewal (No Commission Paid)'
                 }))
             );
             XLSX.utils.book_append_sheet(wb, rnSheet, 'Renewals');
             
             // Download
-            XLSX.writeFile(wb, 'Commission_Report.xlsx');
+            const today = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `Commission_Report_${today}.xlsx`);
         };
 
         window.reset = function() {
@@ -973,12 +1029,7 @@
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('results').classList.add('hidden');
             document.getElementById('fileInput').value = '';
-            document.getElementById('endorsementsInput').value = '';
-            document.getElementById('cancellationsInput').value = '';
-            document.getElementById('adjustmentsSummary').style.display = 'none';
             document.getElementById('missingPoliciesCard').style.display = 'none';
-            endorsements = [];
-            cancellations = [];
             resultsData = {};
         };
     </script>
