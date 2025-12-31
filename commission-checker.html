@@ -315,22 +315,23 @@
             <div class="upload-area" onclick="document.getElementById('fileInput').click()">
                 <div class="upload-icon">📄</div>
                 <div class="upload-text">Upload Commission Statement</div>
-                <div class="upload-subtext">Excel format (.xlsx) - Ivantage export</div>
+                <div class="upload-subtext">Excel (.xlsx) or CSV (.csv) format</div>
             </div>
-            <input type="file" id="fileInput" accept=".xlsx,.xls">
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
 
             <div class="info-box">
                 <h3>How It Works:</h3>
                 <p>
-                    1. Upload your Ivantage commission statement (Excel format)<br>
-                    2. Tool reads: Customer Name, Reason (New business/Renewal/Cancellation), and Commission Amount<br>
-                    3. Checks each "New business" against your Business Tracker<br>
-                    4. Calculates total commission per producer:<br>
+                    1. Upload your commission statement (Excel or CSV format)<br>
+                    2. <strong>Supported formats:</strong> Ivantage, Cabrillo, Universal P&C, Slide<br>
+                    3. Tool reads: Customer Name, Transaction Type, and Commission Amount<br>
+                    4. Checks each "New business" against your Business Tracker<br>
+                    5. Calculates total commission per producer:<br>
                     &nbsp;&nbsp;&nbsp;• New Business: <strong>Add</strong> commission<br>
                     &nbsp;&nbsp;&nbsp;• Re-Writes: <strong>Deduct</strong> commission<br>
-                    &nbsp;&nbsp;&nbsp;• Endorsements/Policy Changes: <strong>Add</strong> if positive, <strong>Deduct</strong> if negative<br>
+                    &nbsp;&nbsp;&nbsp;• Endorsements: <strong>Add</strong> if positive, <strong>Deduct</strong> if negative<br>
                     &nbsp;&nbsp;&nbsp;• Cancellations: <strong>Deduct</strong> commission<br>
-                    5. Shows total dollars to pay each producer
+                    6. Shows total dollars to pay each producer
                 </p>
             </div>
         </div>
@@ -470,14 +471,13 @@
                 let records = [];
 
                 if (file.name.endsWith('.pdf')) {
-                    // PDF not fully supported for this format - show error
-                    alert('Please use Excel format for commission statements. PDF parsing is not yet supported for this statement type.');
+                    alert('PDF support coming soon. For now, please export commission statement to Excel/CSV format.');
                     reset();
                     return;
-                } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv')) {
                     records = await parseExcel(file);
-                } else if (file.name.endsWith('.csv')) {
-                    alert('Please convert CSV to Excel format for best results.');
+                } else {
+                    alert('Unsupported file format. Please use Excel (.xlsx) or CSV (.csv) format.');
                     reset();
                     return;
                 }
@@ -521,45 +521,51 @@
                         const data = new Uint8Array(e.target.result);
                         const workbook = XLSX.read(data, { type: 'array' });
                         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: null });
 
-                        // Find header row (contains "Insured Name")
+                        // Try to detect format by looking for key column headers
+                        let format = null;
                         let headerRowIndex = -1;
-                        for (let i = 0; i < jsonData.length; i++) {
-                            if (jsonData[i].includes('Insured Name')) {
+
+                        for (let i = 0; i < Math.min(10, jsonData.length); i++) {
+                            const row = jsonData[i];
+                            const rowStr = row.join('|').toLowerCase();
+                            
+                            // Ivantage format
+                            if (rowStr.includes('insured name') && rowStr.includes('reason') && rowStr.includes('amount')) {
+                                format = 'ivantage';
+                                headerRowIndex = i;
+                                break;
+                            }
+                            // Cabrillo format (CSV converted to array)
+                            if (rowStr.includes('insured name') && rowStr.includes('transaction type') && rowStr.includes('commission paid')) {
+                                format = 'cabrillo';
+                                headerRowIndex = i;
+                                break;
+                            }
+                            // Universal P&C format
+                            if (rowStr.includes('insured name') && rowStr.includes('transaction type') && rowStr.includes('commission payable')) {
+                                format = 'universal';
+                                headerRowIndex = i;
+                                break;
+                            }
+                            // Slide format
+                            if (rowStr.includes('insured') && rowStr.includes('new/renewal') && rowStr.includes('commission payable')) {
+                                format = 'slide';
                                 headerRowIndex = i;
                                 break;
                             }
                         }
 
-                        if (headerRowIndex === -1) {
-                            reject(new Error('Could not find header row with "Insured Name"'));
+                        if (!format || headerRowIndex === -1) {
+                            reject(new Error('Could not detect commission statement format. Please use Ivantage, Cabrillo, Universal P&C, or Slide format.'));
                             return;
                         }
 
-                        const headers = jsonData[headerRowIndex];
-                        const nameCol = headers.indexOf('Insured Name');
-                        const reasonCol = headers.indexOf('Reason');
-                        const amountCol = headers.indexOf('Amount');
-
-                        if (nameCol === -1 || reasonCol === -1 || amountCol === -1) {
-                            reject(new Error('Required columns not found'));
-                            return;
-                        }
-
-                        const records = [];
-                        for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
-                            const row = jsonData[i];
-                            if (row[nameCol]) {
-                                records.push({
-                                    name: row[nameCol],
-                                    reason: row[reasonCol] || '',
-                                    amount: parseFloat(row[amountCol]) || 0
-                                });
-                            }
-                        }
-
+                        console.log(`Detected format: ${format}`);
+                        const records = parseByFormat(jsonData, format, headerRowIndex);
                         resolve(records);
+
                     } catch (error) {
                         reject(error);
                     }
@@ -567,6 +573,67 @@
                 reader.onerror = reject;
                 reader.readAsArrayBuffer(file);
             });
+        }
+
+        function parseByFormat(jsonData, format, headerRowIndex) {
+            const headers = jsonData[headerRowIndex];
+            const records = [];
+
+            // Find column indices based on format
+            let nameCol, reasonCol, amountCol;
+
+            if (format === 'ivantage') {
+                nameCol = headers.findIndex(h => h && h.toLowerCase().includes('insured name'));
+                reasonCol = headers.findIndex(h => h && h.toLowerCase() === 'reason');
+                amountCol = headers.findIndex(h => h && h.toLowerCase() === 'amount');
+            } else if (format === 'cabrillo') {
+                nameCol = headers.findIndex(h => h && h.toLowerCase().includes('insured name'));
+                reasonCol = headers.findIndex(h => h && h.toLowerCase().includes('transaction type'));
+                amountCol = headers.findIndex(h => h && h.toLowerCase().includes('commission paid'));
+            } else if (format === 'universal') {
+                nameCol = headers.findIndex(h => h && h.toLowerCase().includes('insured name'));
+                reasonCol = headers.findIndex(h => h && h.toLowerCase().includes('transaction type'));
+                amountCol = headers.findIndex(h => h && h.toLowerCase().includes('commission') && !h.toLowerCase().includes('rate'));
+            } else if (format === 'slide') {
+                nameCol = headers.findIndex(h => h && h.toLowerCase() === 'insured');
+                reasonCol = headers.findIndex(h => h && h.toLowerCase().includes('new/renewal'));
+                amountCol = headers.findIndex(h => h && h.toLowerCase().includes('commission payable'));
+            }
+
+            if (nameCol === -1 || reasonCol === -1 || amountCol === -1) {
+                console.error('Could not find required columns', { nameCol, reasonCol, amountCol });
+                return [];
+            }
+
+            // Parse data rows
+            for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (!row[nameCol]) continue;
+
+                let reason = row[reasonCol] || '';
+                let amount = row[amountCol];
+
+                // Clean up amount - remove $ and commas, handle parentheses as negative
+                if (typeof amount === 'string') {
+                    amount = amount.replace(/[$,]/g, '');
+                    if (amount.includes('(') || amount.includes(')')) {
+                        amount = '-' + amount.replace(/[()]/g, '');
+                    }
+                }
+                amount = parseFloat(amount) || 0;
+
+                // Normalize reason text
+                reason = String(reason).toLowerCase().trim();
+
+                records.push({
+                    name: row[nameCol],
+                    reason: reason,
+                    amount: amount,
+                    format: format
+                });
+            }
+
+            return records;
         }
 
         async function parseCSV(file) {
@@ -661,8 +728,35 @@
             for (const record of records) {
                 const reason = record.reason.toLowerCase();
                 
-                // Categorize by reason
-                if (reason.includes('new business')) {
+                // Determine transaction type from reason text
+                let isNewBusiness = false;
+                let isRenewal = false;
+                let isCancellation = false;
+                let isEndorsement = false;
+
+                // Check for new business
+                if (reason.includes('new business') || reason.includes('new policy')) {
+                    isNewBusiness = true;
+                }
+                // Check for renewal
+                else if (reason.includes('renew') || reason.includes('ren') || reason.includes('renewal')) {
+                    isRenewal = true;
+                }
+                // Check for cancellation
+                else if (reason.includes('cancel')) {
+                    isCancellation = true;
+                }
+                // Check for endorsement/policy change
+                else if (reason.includes('endorsement') || reason.includes('policy change') || reason.includes('policy endorsement')) {
+                    isEndorsement = true;
+                }
+                // Default to renewal if unclear
+                else {
+                    isRenewal = true;
+                }
+
+                // Process based on transaction type
+                if (isNewBusiness) {
                     // Check if in Business Tracker
                     const match = businessTrackerPolicies.find(policy => 
                         fuzzyMatch(policy.customer, record.name)
@@ -712,13 +806,13 @@
                             reason: 'Not found in Business Tracker'
                         });
                     }
-                } else if (reason.includes('renew')) {
-                    // Renewal - no commission
+                } else if (isRenewal) {
+                    // Renewal - no commission for new business
                     renewals.push({
                         name: record.name,
                         amount: record.amount
                     });
-                } else if (reason.includes('cancel')) {
+                } else if (isCancellation) {
                     // Cancellation - deduct from commission
                     const match = businessTrackerPolicies.find(policy => 
                         fuzzyMatch(policy.customer, record.name)
@@ -731,8 +825,8 @@
                             amount: Math.abs(record.amount) // Make positive for display
                         });
                     }
-                } else if (reason.includes('policy change') || reason.includes('endorsement')) {
-                    // Endorsement - add to commission
+                } else if (isEndorsement) {
+                    // Endorsement - add if positive, deduct if negative
                     const match = businessTrackerPolicies.find(policy => 
                         fuzzyMatch(policy.customer, record.name)
                     );
