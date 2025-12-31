@@ -668,23 +668,86 @@
         }
 
         function fuzzyMatch(name1, name2) {
-            // Simple fuzzy matching - normalize and compare
-            const normalize = (str) => str.toLowerCase().replace(/[^a-z]/g, '');
+            // Normalize function
+            const normalize = (str) => str.toLowerCase().replace(/[^a-z\s]/g, '').trim();
+            
             const n1 = normalize(name1);
             const n2 = normalize(name2);
 
             // Exact match after normalization
             if (n1 === n2) return true;
 
-            // Check if one contains the other (handles "John Doe" vs "Doe, John")
-            if (n1.includes(n2) || n2.includes(n1)) return true;
+            // Split into parts
+            const parts1 = n1.split(/\s+/).filter(p => p.length > 0);
+            const parts2 = n2.split(/\s+/).filter(p => p.length > 0);
 
-            // Calculate Levenshtein distance for similarity
-            const distance = levenshteinDistance(n1, n2);
-            const maxLen = Math.max(n1.length, n2.length);
+            // Try matching with name order variations
+            if (parts1.length >= 2 && parts2.length >= 2) {
+                // Generate permutations for both names
+                const perms1 = getNamePermutations(parts1);
+                const perms2 = getNamePermutations(parts2);
+
+                // Check if any permutation matches exactly
+                for (const perm1 of perms1) {
+                    for (const perm2 of perms2) {
+                        if (perm1 === perm2) return true;
+                        
+                        // Fuzzy match on permutations (handles typos)
+                        const distance = levenshteinDistance(perm1, perm2);
+                        const maxLen = Math.max(perm1.length, perm2.length);
+                        if (maxLen > 0) {
+                            const similarity = 1 - distance / maxLen;
+                            if (similarity >= 0.85) return true;
+                        }
+                    }
+                }
+            }
+
+            // Check if one contains the other (handles partial names)
+            const stripped1 = n1.replace(/\s+/g, '');
+            const stripped2 = n2.replace(/\s+/g, '');
+            if (stripped1.includes(stripped2) || stripped2.includes(stripped1)) {
+                // Only match if the contained part is substantial (>50% of original)
+                const minLen = Math.min(stripped1.length, stripped2.length);
+                const maxLen = Math.max(stripped1.length, stripped2.length);
+                if (minLen / maxLen >= 0.5) return true;
+            }
+
+            // Standard fuzzy match (last resort)
+            const distance = levenshteinDistance(stripped1, stripped2);
+            const maxLen = Math.max(stripped1.length, stripped2.length);
             const similarity = 1 - distance / maxLen;
 
-            return similarity >= 0.85; // 85% similarity threshold
+            return similarity >= 0.85;
+        }
+
+        function getNamePermutations(parts) {
+            const perms = [];
+            
+            if (parts.length === 2) {
+                // Two parts: "first last" and "last first"
+                perms.push(parts[0] + ' ' + parts[1]);
+                perms.push(parts[1] + ' ' + parts[0]);
+                // Also add concatenated versions
+                perms.push(parts[0] + parts[1]);
+                perms.push(parts[1] + parts[0]);
+            } else if (parts.length === 3) {
+                // Three parts: try common combinations
+                perms.push(parts[0] + ' ' + parts[1] + ' ' + parts[2]); // first middle last
+                perms.push(parts[2] + ' ' + parts[0] + ' ' + parts[1]); // last first middle
+                perms.push(parts[2] + ' ' + parts[0]);                   // last first (drop middle)
+                perms.push(parts[0] + ' ' + parts[2]);                   // first last (drop middle)
+            } else if (parts.length > 3) {
+                // Multiple parts: try first+last combinations
+                perms.push(parts.join(' '));                                          // all parts
+                perms.push(parts[parts.length - 1] + ' ' + parts[0]);                // last first
+                perms.push(parts[0] + ' ' + parts[parts.length - 1]);                // first last
+            } else {
+                // Single part - just return as is
+                perms.push(parts[0]);
+            }
+            
+            return perms;
         }
 
         function levenshteinDistance(str1, str2) {
