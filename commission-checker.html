@@ -366,6 +366,17 @@
                     <div class="names-list" id="newBusinessList"></div>
                 </div>
 
+                <!-- MISSING NEW BUSINESS Card -->
+                <div class="result-card" id="missingCard" style="border-left: 4px solid #f59e0b; background: #fffbeb;">
+                    <div class="result-header">
+                        <div class="result-icon">⚠️</div>
+                        <div class="result-title" style="color: #92400e;">Missing from Tracker</div>
+                    </div>
+                    <div class="result-count" id="missingCount" style="color: #92400e;">0</div>
+                    <div class="result-subtitle" style="color: #92400e;">Marked "New Business" but NOT in tracker</div>
+                    <div class="names-list" id="missingList" style="background: white; border: 2px solid #fbbf24;"></div>
+                </div>
+
                 <!-- Re-Writes Card -->
                 <div class="result-card rewrite">
                     <div class="result-header">
@@ -387,14 +398,6 @@
                     <div class="result-subtitle">Not in Business Tracker</div>
                     <div class="names-list" id="renewalList"></div>
                 </div>
-            </div>
-
-            <!-- Missing Policies Alert -->
-            <div class="producer-summary" id="missingPoliciesCard" style="display: none; border: 2px solid #f59e0b; background: #fffbeb;">
-                <h2 style="color: #92400e;">⚠️ MISSING FROM TRACKER - ACTION REQUIRED</h2>
-                <p style="color: #78350f; margin-bottom: 16px;">These policies appear to be NEW BUSINESS (not in renewals) but are missing from your tracker. They may have been entered incorrectly or forgotten.</p>
-                <div class="names-list" id="missingPoliciesList" style="background: white;"></div>
-                <p style="color: #78350f; margin-top: 12px; font-size: 14px;">💡 <strong>Action:</strong> Manually verify these names and add them to the Business Tracker if they are indeed new business.</p>
             </div>
 
             <div class="actions">
@@ -762,11 +765,13 @@
             const nbTotal = newBusiness.reduce((sum, item) => sum + item.amount, 0);
             const rwTotal = rewrites.reduce((sum, item) => sum + item.amount, 0);
             const rnTotal = renewals.reduce((sum, item) => sum + item.amount, 0);
+            const missingTotal = missingPolicies.reduce((sum, item) => sum + item.amount, 0);
 
             // Update counts with dollar amounts
             document.getElementById('newBusinessCount').innerHTML = `${newBusiness.length}<div style="font-size:18px;font-weight:600;margin-top:8px;">$${nbTotal.toFixed(2)}</div>`;
             document.getElementById('rewriteCount').innerHTML = `${rewrites.length}<div style="font-size:18px;font-weight:600;margin-top:8px;">$${rwTotal.toFixed(2)}</div>`;
             document.getElementById('renewalCount').innerHTML = `${renewals.length}<div style="font-size:18px;font-weight:600;margin-top:8px;">$${rnTotal.toFixed(2)}</div>`;
+            document.getElementById('missingCount').innerHTML = `${missingPolicies.length}<div style="font-size:18px;font-weight:600;margin-top:8px;color:#92400e;">$${missingTotal.toFixed(2)}</div>`;
 
             // Display lists with amounts
             document.getElementById('newBusinessList').innerHTML = newBusiness
@@ -781,12 +786,21 @@
                 .map(item => `<div class="name-item">${item.name}</div>`)
                 .join('') || '<div class="name-item">None found</div>';
 
-            // Show missing policies alert if any
+            // Display missing policies in the card
             if (missingPolicies.length > 0) {
-                document.getElementById('missingPoliciesCard').style.display = 'block';
-                document.getElementById('missingPoliciesList').innerHTML = missingPolicies
-                    .map(item => `<div class="name-item" style="color: #92400e; font-weight: 600;">⚠️ ${item.name} - $${item.amount.toFixed(2)} (${item.reason})</div>`)
-                    .join('');
+                document.getElementById('missingList').innerHTML = missingPolicies
+                    .map(item => `<div class="name-item" style="color: #92400e; font-weight: 600; background: #fef3c7; padding: 12px; margin: 4px 0; border-radius: 6px;">
+                        <div style="font-size: 14px; margin-bottom: 4px;">⚠️ ${item.name}</div>
+                        <div style="font-size: 12px; color: #78350f;">Commission: $${item.amount.toFixed(2)} | Reason: ${item.reason}</div>
+                    </div>`)
+                    .join('') + 
+                    '<div style="margin-top: 16px; padding: 12px; background: #fef3c7; border-radius: 6px; font-size: 13px; color: #78350f;">' +
+                    '<strong>💡 ACTION REQUIRED:</strong><br>' +
+                    'These policies are marked as "New Business" on the commission statement but are NOT in your Business Tracker.<br>' +
+                    'Please verify and add them to your tracker if they are legitimate new business.' +
+                    '</div>';
+            } else {
+                document.getElementById('missingList').innerHTML = '<div class="name-item" style="color: #15803d; background: #dcfce7; padding: 12px; border-radius: 6px;">✅ All new business policies are in your tracker!</div>';
             }
 
             // Calculate producer totals
@@ -1029,7 +1043,6 @@
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('results').classList.add('hidden');
             document.getElementById('fileInput').value = '';
-            document.getElementById('missingPoliciesCard').style.display = 'none';
             resultsData = {};
         };
     </script>
