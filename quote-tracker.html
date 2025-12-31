@@ -510,7 +510,7 @@
                         </div>
                         <div class="form-group">
                             <label for="policyType">Policy Type</label>
-                            <select id="policyType" required>
+                            <select id="policyType" required onchange="toggleItemsField()">
                                 <option value="">Select type</option>
                                 <option value="Auto">Auto</option>
                                 <option value="Homeowners">Homeowners</option>
@@ -522,6 +522,10 @@
                                 <option value="Life">Life</option>
                                 <option value="Other">Other</option>
                             </select>
+                        </div>
+                        <div class="form-group" id="itemsGroup" style="display: none;">
+                            <label for="items">Number of Vehicles</label>
+                            <input type="number" id="items" min="1" max="10" value="1" placeholder="1">
                         </div>
                         <div class="form-group">
                             <label for="quotedPremium">Quoted Premium</label>
@@ -538,6 +542,30 @@
                                 <option value="Bobby">Bobby</option>
                                 <option value="Jonny">Jonny</option>
                                 <option value="Diane">Diane</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="referralSource">Referral Source</label>
+                            <select id="referralSource">
+                                <option value="">Select source</option>
+                                <option value="Call In">Call In</option>
+                                <option value="X-Sell">X-Sell</option>
+                                <option value="Direct Mail">Direct Mail</option>
+                                <option value="Customer Referral">Customer Referral</option>
+                                <option value="Google">Google</option>
+                                <option value="Winback">Winback</option>
+                                <option value="Lapse">Lapse</option>
+                                <option value="Transfer In">Transfer In</option>
+                                <option value="Family & Friends">Family & Friends</option>
+                                <option value="Re-Write">Re-Write</option>
+                                <option value="UW Cancellation">UW Cancellation</option>
+                                <option value="Non-Renewal">Non-Renewal</option>
+                                <option value="Rimon Nassief">Rimon Nassief</option>
+                                <option value="MHM">MHM</option>
+                                <option value="Larry Fig">Larry Fig</option>
+                                <option value="Rima">Rima</option>
+                                <option value="Other Center of Influence">Other Center of Influence</option>
+                                <option value="Other">Other</option>
                             </select>
                         </div>
                     </div>
@@ -662,7 +690,7 @@
                     </div>
                     <div class="form-group">
                         <label for="editPolicyType">Policy Type</label>
-                        <select id="editPolicyType" required>
+                        <select id="editPolicyType" required onchange="toggleEditItemsField()">
                             <option value="Auto">Auto</option>
                             <option value="Homeowners">Homeowners</option>
                             <option value="Renters">Renters</option>
@@ -673,6 +701,10 @@
                             <option value="Life">Life</option>
                             <option value="Other">Other</option>
                         </select>
+                    </div>
+                    <div class="form-group" id="editItemsGroup" style="display: none;">
+                        <label for="editItems">Number of Vehicles</label>
+                        <input type="number" id="editItems" min="1" max="10" value="1" placeholder="1">
                     </div>
                     <div class="form-group">
                         <label for="editQuotedPremium">Quoted Premium</label>
@@ -688,6 +720,30 @@
                             <option value="Bobby">Bobby</option>
                             <option value="Jonny">Jonny</option>
                             <option value="Diane">Diane</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editReferralSource">Referral Source</label>
+                        <select id="editReferralSource">
+                            <option value="">Select source</option>
+                            <option value="Call In">Call In</option>
+                            <option value="X-Sell">X-Sell</option>
+                            <option value="Direct Mail">Direct Mail</option>
+                            <option value="Customer Referral">Customer Referral</option>
+                            <option value="Google">Google</option>
+                            <option value="Winback">Winback</option>
+                            <option value="Lapse">Lapse</option>
+                            <option value="Transfer In">Transfer In</option>
+                            <option value="Family & Friends">Family & Friends</option>
+                            <option value="Re-Write">Re-Write</option>
+                            <option value="UW Cancellation">UW Cancellation</option>
+                            <option value="Non-Renewal">Non-Renewal</option>
+                            <option value="Rimon Nassief">Rimon Nassief</option>
+                            <option value="MHM">MHM</option>
+                            <option value="Larry Fig">Larry Fig</option>
+                            <option value="Rima">Rima</option>
+                            <option value="Other Center of Influence">Other Center of Influence</option>
+                            <option value="Other">Other</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -768,10 +824,36 @@
             card.classList.toggle('show');
         }
 
+        function toggleItemsField() {
+            const policyType = document.getElementById('policyType').value;
+            const itemsGroup = document.getElementById('itemsGroup');
+            
+            if (policyType === 'Auto') {
+                itemsGroup.style.display = 'flex';
+            } else {
+                itemsGroup.style.display = 'none';
+                document.getElementById('items').value = '1';
+            }
+        }
+
+        function toggleEditItemsField() {
+            const policyType = document.getElementById('editPolicyType').value;
+            const itemsGroup = document.getElementById('editItemsGroup');
+            
+            if (policyType === 'Auto') {
+                itemsGroup.style.display = 'flex';
+            } else {
+                itemsGroup.style.display = 'none';
+                document.getElementById('editItems').value = '1';
+            }
+        }
+
         // Make functions globally available
         window.signOut = signOutUser;
         window.toggleQuickEntry = toggleQuickEntry;
         window.applyFilters = applyFilters;
+        window.toggleItemsField = toggleItemsField;
+        window.toggleEditItemsField = toggleEditItemsField;
 
         // Subscribe to quotes
         function subscribeToQuotes() {
@@ -793,15 +875,21 @@
         document.getElementById('quoteForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
+            const policyType = document.getElementById('policyType').value;
+            const itemsCount = policyType === 'Auto' ? parseInt(document.getElementById('items').value) || 1 : 1;
+            const itemsText = policyType === 'Auto' ? `${itemsCount} vehicle${itemsCount > 1 ? 's' : ''}` : '1';
+
             const quote = {
                 quoteDate: document.getElementById('quoteDate').value,
                 customer: document.getElementById('customer').value,
                 phone: document.getElementById('phone').value,
                 email: document.getElementById('email').value,
-                policyType: document.getElementById('policyType').value,
+                policyType: policyType,
+                items: itemsText,
                 quotedPremium: parseFloat(document.getElementById('quotedPremium').value),
                 carrier: document.getElementById('carrier').value,
                 producer: document.getElementById('producer').value,
+                referralSource: document.getElementById('referralSource').value,
                 notes: document.getElementById('notes').value,
                 status: 'Pending',
                 createdAt: serverTimestamp(),
@@ -923,9 +1011,21 @@
             document.getElementById('editPhone').value = quote.phone;
             document.getElementById('editEmail').value = quote.email || '';
             document.getElementById('editPolicyType').value = quote.policyType;
+            
+            // Parse items count for Auto policies
+            if (quote.policyType === 'Auto' && quote.items) {
+                const itemsMatch = quote.items.match(/(\d+)/);
+                document.getElementById('editItems').value = itemsMatch ? itemsMatch[1] : '1';
+                document.getElementById('editItemsGroup').style.display = 'flex';
+            } else {
+                document.getElementById('editItems').value = '1';
+                document.getElementById('editItemsGroup').style.display = 'none';
+            }
+            
             document.getElementById('editQuotedPremium').value = quote.quotedPremium;
             document.getElementById('editCarrier').value = quote.carrier;
             document.getElementById('editProducer').value = quote.producer;
+            document.getElementById('editReferralSource').value = quote.referralSource || '';
             document.getElementById('editStatus').value = quote.status;
             document.getElementById('editNotes').value = quote.notes || '';
 
@@ -943,29 +1043,78 @@
 
             if (!currentEditId) return;
 
+            const oldQuote = quotes.find(q => q.id === currentEditId);
+            const newStatus = document.getElementById('editStatus').value;
+            const policyType = document.getElementById('editPolicyType').value;
+            const itemsCount = policyType === 'Auto' ? parseInt(document.getElementById('editItems').value) || 1 : 1;
+            const itemsText = policyType === 'Auto' ? `${itemsCount} vehicle${itemsCount > 1 ? 's' : ''}` : '1';
+
             const quoteData = {
                 quoteDate: document.getElementById('editQuoteDate').value,
                 customer: document.getElementById('editCustomer').value,
                 phone: document.getElementById('editPhone').value,
                 email: document.getElementById('editEmail').value,
-                policyType: document.getElementById('editPolicyType').value,
+                policyType: policyType,
+                items: itemsText,
                 quotedPremium: parseFloat(document.getElementById('editQuotedPremium').value),
                 carrier: document.getElementById('editCarrier').value,
                 producer: document.getElementById('editProducer').value,
-                status: document.getElementById('editStatus').value,
+                referralSource: document.getElementById('editReferralSource').value,
+                status: newStatus,
                 notes: document.getElementById('editNotes').value,
                 updatedAt: serverTimestamp(),
                 updatedBy: auth.currentUser.email
             };
 
+            // If status changed to "Bound", add bound date
+            if (newStatus === 'Bound' && oldQuote.status !== 'Bound') {
+                quoteData.boundDate = new Date().toISOString().split('T')[0];
+            }
+
             try {
+                // Update the quote
                 await updateDoc(doc(db, 'quotes', currentEditId), quoteData);
+                
+                // If quote was just marked as Bound, create policy in Business Tracker
+                if (newStatus === 'Bound' && oldQuote.status !== 'Bound') {
+                    await createPolicyFromQuote(quoteData);
+                }
+                
                 closeEditModal();
             } catch (error) {
                 console.error('Error updating quote:', error);
                 alert('Error updating quote: ' + error.message);
             }
         });
+
+        // Create policy in Business Tracker when quote is marked as Bound
+        async function createPolicyFromQuote(quote) {
+            try {
+                const policy = {
+                    date: quote.boundDate || new Date().toISOString().split('T')[0],
+                    customer: quote.customer,
+                    policyType: quote.policyType,
+                    items: quote.items || '1',
+                    company: quote.carrier,
+                    premium: quote.quotedPremium,
+                    referralSource: quote.referralSource || '',
+                    producer: quote.producer,
+                    isAllstate: quote.carrier.toLowerCase().includes('allstate'),
+                    createdAt: serverTimestamp(),
+                    createdBy: auth.currentUser.email,
+                    createdFromQuote: true,
+                    quoteId: currentEditId
+                };
+
+                await addDoc(collection(db, 'policies'), policy);
+                
+                // Show success message
+                alert(`✅ Quote marked as Bound and policy created in Business Tracker!\n\nCustomer: ${quote.customer}\nType: ${quote.policyType}\nItems: ${quote.items}\nPremium: $${quote.quotedPremium.toLocaleString()}`);
+            } catch (error) {
+                console.error('Error creating policy:', error);
+                alert('Quote updated, but failed to create policy in Business Tracker: ' + error.message);
+            }
+        }
 
         window.deleteQuote = async function(id) {
             if (!confirm('Are you sure you want to delete this quote?')) return;
