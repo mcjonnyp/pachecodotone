@@ -762,7 +762,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut as firebaseSignOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, orderBy, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, orderBy, onSnapshot, serverTimestamp, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         // Firebase configuration
         const firebaseConfig = {
@@ -863,6 +863,9 @@
             try {
                 await addDoc(collection(db, 'policies'), policy);
                 
+                // Check if this matches any pending quotes and mark them as Bound
+                await checkAndUpdateQuotes(policy.customer, policy.policyType);
+                
                 // Reset form and hide
                 this.reset();
                 document.getElementById('date').value = new Date().toISOString().split('T')[0];
@@ -872,6 +875,35 @@
                 alert('Error adding policy: ' + error.message);
             }
         });
+
+        // Check for matching quotes and mark as Bound
+        async function checkAndUpdateQuotes(customerName, policyType) {
+            try {
+                const quotesRef = collection(db, 'quotes');
+                const q = query(quotesRef);
+                const snapshot = await getDocs(q);
+                
+                snapshot.forEach(async (docSnap) => {
+                    const quote = docSnap.data();
+                    // Match by customer name (case-insensitive) and policy type, status must be Pending
+                    if (quote.customer.toLowerCase() === customerName.toLowerCase() && 
+                        quote.policyType === policyType && 
+                        quote.status === 'Pending') {
+                        
+                        await updateDoc(doc(db, 'quotes', docSnap.id), {
+                            status: 'Bound',
+                            boundDate: new Date().toISOString().split('T')[0],
+                            updatedAt: serverTimestamp(),
+                            updatedBy: auth.currentUser.email
+                        });
+                        
+                        console.log(`Quote for ${customerName} marked as Bound`);
+                    }
+                });
+            } catch (error) {
+                console.error('Error checking quotes:', error);
+            }
+        }
 
         // Edit form submission
         document.getElementById('editForm').addEventListener('submit', async function(e) {

@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote Tracker | pacheco.one</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --background: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --mono: 'JetBrains Mono', monospace;
+            --sans: 'Outfit', -apple-system, sans-serif;
+        }
+
+        body {
+            font-family: var(--sans);
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Main app hidden by default until user logs in */
+        #mainApp {
+            display: none;
+        }
+
+        #mainApp.show {
+            display: block;
+        }
+
+        /* Navigation */
+        nav {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .user-info {
+            color: var(--text-light);
+            font-size: 14px;
+            margin-right: 12px;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: var(--sans);
+        }
+
+        .nav-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-btn.primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .nav-btn.secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .nav-btn.secondary:hover {
+            background: var(--background);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Quick Entry Card */
+        .quick-entry-card {
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 30px;
+            margin-bottom: 30px;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .quick-entry-card.show {
+            max-height: 1000px;
+            opacity: 1;
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: var(--sans);
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: var(--sans);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--background);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text);
+            font-family: var(--mono);
+        }
+
+        .stat-subtitle {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        /* Filters */
+        .filters-card {
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        /* Quotes Table */
+        .quotes-card {
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--background);
+        }
+
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: var(--background);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-bound {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-lost {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px 8px;
+            transition: transform 0.2s;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .days-old {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .days-old.urgent {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            margin-bottom: 24px;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Main App -->
+    <div id="mainApp">
+        <!-- Navigation -->
+        <nav>
+            <div class="nav-container">
+                <span class="logo">Quote Tracker</span>
+                <div class="nav-right">
+                    <span class="user-info" id="userEmail"></span>
+                    <button class="nav-btn secondary" onclick="window.location.href='business-tracker-app.html'">📊 Business Tracker</button>
+                    <button class="nav-btn primary" onclick="toggleQuickEntry()">+ Add Quote</button>
+                    <button class="nav-btn secondary" onclick="signOut()">Sign Out</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Container -->
+        <div class="container">
+            <!-- Quick Entry Form -->
+            <div class="quick-entry-card" id="quickEntryCard">
+                <div class="section-header">
+                    <h2 class="section-title">Add New Quote</h2>
+                </div>
+                <form id="quoteForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="quoteDate">Quote Date</label>
+                            <input type="date" id="quoteDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="customer">Customer Name</label>
+                            <input type="text" id="customer" placeholder="John Doe" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone</label>
+                            <input type="tel" id="phone" placeholder="555-123-4567" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email (Optional)</label>
+                            <input type="email" id="email" placeholder="john@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="policyType">Policy Type</label>
+                            <select id="policyType" required>
+                                <option value="">Select type</option>
+                                <option value="Auto">Auto</option>
+                                <option value="Homeowners">Homeowners</option>
+                                <option value="Renters">Renters</option>
+                                <option value="Condo">Condo</option>
+                                <option value="Umbrella">Umbrella</option>
+                                <option value="Flood">Flood</option>
+                                <option value="Business">Business</option>
+                                <option value="Life">Life</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="quotedPremium">Quoted Premium</label>
+                            <input type="number" id="quotedPremium" placeholder="1200" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="carrier">Carrier</label>
+                            <input type="text" id="carrier" placeholder="Allstate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="producer">Producer</label>
+                            <select id="producer" required>
+                                <option value="">Select producer</option>
+                                <option value="Bobby">Bobby</option>
+                                <option value="Jonny">Jonny</option>
+                                <option value="Diane">Diane</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Notes (Optional)</label>
+                        <textarea id="notes" placeholder="Any additional details..."></textarea>
+                    </div>
+                    <div class="form-actions" style="margin-top: 20px;">
+                        <button type="button" class="btn btn-secondary" onclick="toggleQuickEntry()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Quote</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Active Quotes</div>
+                    <div class="stat-value" id="activeQuotes">0</div>
+                    <div class="stat-subtitle">Pending follow-up</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Needs Follow-Up</div>
+                    <div class="stat-value" id="needsFollowUp">0</div>
+                    <div class="stat-subtitle">3+ days old</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">This Month</div>
+                    <div class="stat-value" id="monthQuotes">0</div>
+                    <div class="stat-subtitle">Total quotes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Close Rate</div>
+                    <div class="stat-value" id="closeRate">0%</div>
+                    <div class="stat-subtitle">Bound vs Total</div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-card">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label>Status:</label>
+                        <select id="statusFilter" onchange="applyFilters()">
+                            <option value="">All Statuses</option>
+                            <option value="Pending" selected>Pending</option>
+                            <option value="Bound">Bound</option>
+                            <option value="Lost">Lost</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Producer:</label>
+                        <select id="producerFilter" onchange="applyFilters()">
+                            <option value="">All Producers</option>
+                            <option value="Bobby">Bobby</option>
+                            <option value="Jonny">Jonny</option>
+                            <option value="Diane">Diane</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Search:</label>
+                        <input type="text" id="searchFilter" placeholder="Customer name..." oninput="applyFilters()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quotes Table -->
+            <div class="quotes-card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Age</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Type</th>
+                                <th>Premium</th>
+                                <th>Carrier</th>
+                                <th>Producer</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quotesTableBody">
+                            <tr>
+                                <td colspan="10" class="empty-state">
+                                    <div class="empty-state-icon">📋</div>
+                                    <div>No quotes yet. Click "Add Quote" to get started!</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Quote</h2>
+            </div>
+            <form id="editForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="editQuoteDate">Quote Date</label>
+                        <input type="date" id="editQuoteDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCustomer">Customer Name</label>
+                        <input type="text" id="editCustomer" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPhone">Phone</label>
+                        <input type="tel" id="editPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editEmail">Email</label>
+                        <input type="email" id="editEmail">
+                    </div>
+                    <div class="form-group">
+                        <label for="editPolicyType">Policy Type</label>
+                        <select id="editPolicyType" required>
+                            <option value="Auto">Auto</option>
+                            <option value="Homeowners">Homeowners</option>
+                            <option value="Renters">Renters</option>
+                            <option value="Condo">Condo</option>
+                            <option value="Umbrella">Umbrella</option>
+                            <option value="Flood">Flood</option>
+                            <option value="Business">Business</option>
+                            <option value="Life">Life</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editQuotedPremium">Quoted Premium</label>
+                        <input type="number" id="editQuotedPremium" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCarrier">Carrier</label>
+                        <input type="text" id="editCarrier" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editProducer">Producer</label>
+                        <select id="editProducer" required>
+                            <option value="Bobby">Bobby</option>
+                            <option value="Jonny">Jonny</option>
+                            <option value="Diane">Diane</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStatus">Status</label>
+                        <select id="editStatus" required>
+                            <option value="Pending">Pending</option>
+                            <option value="Bound">Bound</option>
+                            <option value="Lost">Lost</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 16px;">
+                    <label for="editNotes">Notes</label>
+                    <textarea id="editNotes"></textarea>
+                </div>
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Quote</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut as firebaseSignOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, orderBy, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBUgi5nsyxx0I8JyKT8UG4Nxb7MUr6LIUM",
+            authDomain: "new-business-log.firebaseapp.com",
+            projectId: "new-business-log",
+            storageBucket: "new-business-log.firebasestorage.app",
+            messagingSenderId: "634802326842",
+            appId: "1:634802326842:web:a490dc09d3b1e25fdfd403"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Global variables
+        let quotes = [];
+        let unsubscribe = null;
+        let currentEditId = null;
+
+        // Make functions available globally
+        window.signOut = signOutUser;
+        window.toggleQuickEntry = toggleQuickEntry;
+        window.applyFilters = applyFilters;
+        window.editQuote = editQuote;
+        window.deleteQuote = deleteQuote;
+        window.closeEditModal = closeEditModal;
+
+        // Auth state observer - redirect if not logged in
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in - show app
+                document.getElementById('mainApp').classList.add('show');
+                document.getElementById('userEmail').textContent = user.email;
+                
+                // Set today's date as default
+                document.getElementById('quoteDate').value = new Date().toISOString().split('T')[0];
+                
+                // Subscribe to real-time updates
+                subscribeToQuotes();
+            } else {
+                // User is signed out - redirect to login
+                window.location.href = 'business-tracker-login.html';
+            }
+        });
+
+        async function signOutUser() {
+            try {
+                await firebaseSignOut(auth);
+                // Redirect happens automatically via onAuthStateChanged
+            } catch (error) {
+                console.error('Error signing out:', error);
+            }
+        }
+
+        function toggleQuickEntry() {
+            const card = document.getElementById('quickEntryCard');
+            card.classList.toggle('show');
+        }
+
+        // Subscribe to quotes
+        function subscribeToQuotes() {
+            const quotesRef = collection(db, 'quotes');
+            const q = query(quotesRef, orderBy('quoteDate', 'desc'));
+
+            unsubscribe = onSnapshot(q, (snapshot) => {
+                quotes = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                updateDashboard();
+                renderQuotes();
+            });
+        }
+
+        // Add quote form submission
+        document.getElementById('quoteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const quote = {
+                quoteDate: document.getElementById('quoteDate').value,
+                customer: document.getElementById('customer').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                policyType: document.getElementById('policyType').value,
+                quotedPremium: parseFloat(document.getElementById('quotedPremium').value),
+                carrier: document.getElementById('carrier').value,
+                producer: document.getElementById('producer').value,
+                notes: document.getElementById('notes').value,
+                status: 'Pending',
+                createdAt: serverTimestamp(),
+                createdBy: auth.currentUser.email
+            };
+
+            try {
+                await addDoc(collection(db, 'quotes'), quote);
+                
+                // Reset form and hide
+                this.reset();
+                document.getElementById('quoteDate').value = new Date().toISOString().split('T')[0];
+                toggleQuickEntry();
+            } catch (error) {
+                console.error('Error adding quote:', error);
+                alert('Error adding quote: ' + error.message);
+            }
+        });
+
+        function updateDashboard() {
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            // Active quotes (pending)
+            const active = quotes.filter(q => q.status === 'Pending').length;
+            document.getElementById('activeQuotes').textContent = active;
+
+            // Needs follow-up (3+ days old and pending)
+            const needsFollowUp = quotes.filter(q => {
+                if (q.status !== 'Pending') return false;
+                const daysOld = Math.floor((now - new Date(q.quoteDate)) / (1000 * 60 * 60 * 24));
+                return daysOld >= 3;
+            }).length;
+            document.getElementById('needsFollowUp').textContent = needsFollowUp;
+
+            // This month
+            const monthQuotes = quotes.filter(q => q.quoteDate.startsWith(currentMonth)).length;
+            document.getElementById('monthQuotes').textContent = monthQuotes;
+
+            // Close rate
+            const monthBound = quotes.filter(q => q.quoteDate.startsWith(currentMonth) && q.status === 'Bound').length;
+            const closeRate = monthQuotes > 0 ? Math.round((monthBound / monthQuotes) * 100) : 0;
+            document.getElementById('closeRate').textContent = closeRate + '%';
+        }
+
+        function getFilteredQuotes() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const producerFilter = document.getElementById('producerFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+
+            return quotes.filter(quote => {
+                const matchesStatus = !statusFilter || quote.status === statusFilter;
+                const matchesProducer = !producerFilter || quote.producer === producerFilter;
+                const matchesSearch = !searchFilter || quote.customer.toLowerCase().includes(searchFilter);
+
+                return matchesStatus && matchesProducer && matchesSearch;
+            });
+        }
+
+        function applyFilters() {
+            renderQuotes();
+        }
+
+        function renderQuotes() {
+            const tbody = document.getElementById('quotesTableBody');
+            const filteredQuotes = getFilteredQuotes();
+
+            if (filteredQuotes.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-state">
+                            <div class="empty-state-icon">📋</div>
+                            <div>No quotes found. Try adjusting your filters!</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const now = new Date();
+
+            tbody.innerHTML = filteredQuotes.map((quote) => {
+                const daysOld = Math.floor((now - new Date(quote.quoteDate)) / (1000 * 60 * 60 * 24));
+                const isUrgent = daysOld >= 3 && quote.status === 'Pending';
+
+                return `
+                    <tr>
+                        <td><span class="days-old ${isUrgent ? 'urgent' : ''}">${daysOld}d</span></td>
+                        <td>${formatDate(quote.quoteDate)}</td>
+                        <td><strong>${quote.customer}</strong></td>
+                        <td>${quote.phone}</td>
+                        <td>${quote.policyType}</td>
+                        <td>$${quote.quotedPremium.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                        <td>${quote.carrier}</td>
+                        <td>${quote.producer}</td>
+                        <td><span class="status-badge status-${quote.status.toLowerCase()}">${quote.status}</span></td>
+                        <td>
+                            <button class="action-btn" onclick="editQuote('${quote.id}')" title="Edit">✏️</button>
+                            <button class="action-btn" onclick="deleteQuote('${quote.id}')" title="Delete">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        window.editQuote = function(id) {
+            const quote = quotes.find(q => q.id === id);
+            if (!quote) return;
+
+            currentEditId = id;
+
+            document.getElementById('editQuoteDate').value = quote.quoteDate;
+            document.getElementById('editCustomer').value = quote.customer;
+            document.getElementById('editPhone').value = quote.phone;
+            document.getElementById('editEmail').value = quote.email || '';
+            document.getElementById('editPolicyType').value = quote.policyType;
+            document.getElementById('editQuotedPremium').value = quote.quotedPremium;
+            document.getElementById('editCarrier').value = quote.carrier;
+            document.getElementById('editProducer').value = quote.producer;
+            document.getElementById('editStatus').value = quote.status;
+            document.getElementById('editNotes').value = quote.notes || '';
+
+            document.getElementById('editModal').classList.add('show');
+        };
+
+        window.closeEditModal = function() {
+            document.getElementById('editModal').classList.remove('show');
+            currentEditId = null;
+        };
+
+        // Edit form submission
+        document.getElementById('editForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (!currentEditId) return;
+
+            const quoteData = {
+                quoteDate: document.getElementById('editQuoteDate').value,
+                customer: document.getElementById('editCustomer').value,
+                phone: document.getElementById('editPhone').value,
+                email: document.getElementById('editEmail').value,
+                policyType: document.getElementById('editPolicyType').value,
+                quotedPremium: parseFloat(document.getElementById('editQuotedPremium').value),
+                carrier: document.getElementById('editCarrier').value,
+                producer: document.getElementById('editProducer').value,
+                status: document.getElementById('editStatus').value,
+                notes: document.getElementById('editNotes').value,
+                updatedAt: serverTimestamp(),
+                updatedBy: auth.currentUser.email
+            };
+
+            try {
+                await updateDoc(doc(db, 'quotes', currentEditId), quoteData);
+                closeEditModal();
+            } catch (error) {
+                console.error('Error updating quote:', error);
+                alert('Error updating quote: ' + error.message);
+            }
+        });
+
+        window.deleteQuote = async function(id) {
+            if (!confirm('Are you sure you want to delete this quote?')) return;
+
+            try {
+                await deleteDoc(doc(db, 'quotes', id));
+            } catch (error) {
+                console.error('Error deleting quote:', error);
+                alert('Error deleting quote: ' + error.message);
+            }
+        };
+
+        // Close modal when clicking outside
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditModal();
+            }
+        });
+    </script>
+</body>
+</html>
