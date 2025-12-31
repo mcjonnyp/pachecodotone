@@ -596,24 +596,28 @@
             const records = [];
 
             // Find column indices based on format
-            let nameCol, reasonCol, amountCol;
+            let nameCol, reasonCol, amountCol, companyCol;
 
             if (format === 'ivantage') {
                 nameCol = headers.findIndex(h => h && h.toLowerCase().includes('insured name'));
                 reasonCol = headers.findIndex(h => h && h.toLowerCase() === 'reason');
                 amountCol = headers.findIndex(h => h && h.toLowerCase() === 'amount');
+                companyCol = headers.findIndex(h => h && h.toLowerCase() === 'vendor');
             } else if (format === 'cabrillo') {
                 nameCol = headers.findIndex(h => h && h.toLowerCase().includes('insured name'));
                 reasonCol = headers.findIndex(h => h && h.toLowerCase().includes('transaction type'));
                 amountCol = headers.findIndex(h => h && h.toLowerCase().includes('commission paid'));
+                companyCol = headers.findIndex(h => h && h.toLowerCase().includes('producer code'));
             } else if (format === 'universal') {
                 nameCol = headers.findIndex(h => h && h.toLowerCase().includes('insured name'));
                 reasonCol = headers.findIndex(h => h && h.toLowerCase().includes('transaction type'));
                 amountCol = headers.findIndex(h => h && h.toLowerCase().includes('commission') && !h.toLowerCase().includes('rate'));
+                companyCol = -1; // Universal doesn't have a clear vendor column - uses policy prefix
             } else if (format === 'slide') {
                 nameCol = headers.findIndex(h => h && h.toLowerCase() === 'insured');
                 reasonCol = headers.findIndex(h => h && h.toLowerCase().includes('new/renewal'));
                 amountCol = headers.findIndex(h => h && h.toLowerCase().includes('commission payable'));
+                companyCol = headers.findIndex(h => h && h.toLowerCase() === 'territory');
             }
 
             if (nameCol === -1 || reasonCol === -1 || amountCol === -1) {
@@ -628,6 +632,7 @@
 
                 let reason = row[reasonCol] || '';
                 let amount = row[amountCol];
+                let company = companyCol >= 0 ? row[companyCol] : null;
 
                 // Clean up amount - remove $ and commas, handle parentheses as negative
                 if (typeof amount === 'string') {
@@ -640,11 +645,17 @@
 
                 // Normalize reason text
                 reason = String(reason).toLowerCase().trim();
+                
+                // Normalize company name
+                if (company) {
+                    company = String(company).trim();
+                }
 
                 records.push({
                     name: row[nameCol],
                     reason: reason,
                     amount: amount,
+                    company: company,
                     format: format
                 });
             }
@@ -679,6 +690,26 @@
                 reader.onerror = reject;
                 reader.readAsText(file);
             });
+        }
+
+        function normalizeCompanyName(company) {
+            if (!company) return '';
+            
+            // Normalize company name for matching
+            let normalized = company.toLowerCase().trim();
+            
+            // Remove common prefixes/suffixes
+            normalized = normalized.replace(/^exp\s+mkts\s*-?\s*/i, ''); // "Exp Mkts-" prefix
+            normalized = normalized.replace(/\s+insurance.*$/i, ''); // " Insurance Company" suffix
+            normalized = normalized.replace(/\s+inc\.?$/i, ''); // " Inc" suffix
+            normalized = normalized.replace(/\s+llc\.?$/i, ''); // " LLC" suffix
+            normalized = normalized.replace(/\s+ltd\.?$/i, ''); // " Ltd" suffix
+            
+            // Remove special characters and extra spaces
+            normalized = normalized.replace(/[^a-z0-9\s]/g, '');
+            normalized = normalized.replace(/\s+/g, ' ').trim();
+            
+            return normalized;
         }
 
         function fuzzyMatch(name1, name2) {
@@ -895,7 +926,8 @@
                                 producer: match.producer,
                                 matchedName: match.customer,
                                 date: match.date,
-                                amount: record.amount
+                                amount: record.amount,
+                                company: record.company || match.company // Use statement company or fallback to tracker
                             });
                         }
                     } else {
@@ -914,7 +946,7 @@
                         amount: record.amount
                     });
                 } else if (isCancellation) {
-                    // Cancellation - only deduct if policy was new business in last 12 months
+                    // Cancellation - only deduct if policy was new business in last 12 months AND same company
                     const match = businessTrackerPolicies.find(policy => 
                         fuzzyMatch(policy.customer, record.name)
                     );
@@ -923,17 +955,29 @@
                         const policyDate = new Date(match.date);
                         const isRecent = policyDate >= twelveMonthsAgo;
                         
-                        if (isRecent) {
-                            console.log(`CANCELLATION (within 12 months): ${record.name} | Policy date: ${match.date} | Producer: ${match.producer} | Chargeback: $${Math.abs(record.amount)}`);
+                        // Check if companies match (if both have company info)
+                        const companiesMatch = !record.company || !match.company || 
+                            normalizeCompanyName(record.company) === normalizeCompanyName(match.company);
+                        
+                        if (isRecent && companiesMatch) {
+                            console.log(`CANCELLATION (within 12 months, company match): ${record.name} | Policy date: ${match.date} | Producer: ${match.producer} | Chargeback: $${Math.abs(record.amount)}`);
                             cancellations.push({
                                 name: record.name,
                                 producer: match.producer,
                                 amount: Math.abs(record.amount),
-                                policyDate: match.date
+                                policyDate: match.date,
+                                company: record.company
+                            });
+                        } else if (isRecent && !companiesMatch) {
+                            console.log(`CANCELLATION (within 12 months but COMPANY MISMATCH - IGNORE): ${record.name} | Statement: ${record.company} | Tracker: ${match.company}`);
+                            ignoredTransactions.push({
+                                name: record.name,
+                                type: 'Cancellation',
+                                reason: `Company mismatch (Statement: ${record.company}, Tracker: ${match.company})`,
+                                amount: Math.abs(record.amount)
                             });
                         } else {
                             console.log(`CANCELLATION (>12 months old - IGNORE): ${record.name} | Policy date: ${match.date}`);
-                            // Don't add to cancellations - policy too old
                             ignoredTransactions.push({
                                 name: record.name,
                                 type: 'Cancellation',
@@ -951,7 +995,7 @@
                         });
                     }
                 } else if (isEndorsement) {
-                    // Endorsement - only add commission if policy was new business in last 12 months
+                    // Endorsement - only add commission if policy was new business in last 12 months AND same company
                     const match = businessTrackerPolicies.find(policy => 
                         fuzzyMatch(policy.customer, record.name)
                     );
@@ -960,28 +1004,41 @@
                         const policyDate = new Date(match.date);
                         const isRecent = policyDate >= twelveMonthsAgo;
                         
-                        if (isRecent) {
+                        // Check if companies match (if both have company info)
+                        const companiesMatch = !record.company || !match.company || 
+                            normalizeCompanyName(record.company) === normalizeCompanyName(match.company);
+                        
+                        if (isRecent && companiesMatch) {
                             if (record.amount > 0) {
-                                console.log(`ENDORSEMENT (within 12 months): ${record.name} | Policy date: ${match.date} | Producer: ${match.producer} | Commission: $${record.amount}`);
+                                console.log(`ENDORSEMENT (within 12 months, company match): ${record.name} | Policy date: ${match.date} | Producer: ${match.producer} | Commission: $${record.amount}`);
                                 endorsements.push({
                                     name: record.name,
                                     producer: match.producer,
                                     amount: record.amount,
-                                    policyDate: match.date
+                                    policyDate: match.date,
+                                    company: record.company
                                 });
                             } else if (record.amount < 0) {
-                                // Negative endorsement = chargeback (within 12 months)
-                                console.log(`NEGATIVE ENDORSEMENT (within 12 months): ${record.name} | Policy date: ${match.date} | Producer: ${match.producer} | Chargeback: $${Math.abs(record.amount)}`);
+                                // Negative endorsement = chargeback (within 12 months, company match)
+                                console.log(`NEGATIVE ENDORSEMENT (within 12 months, company match): ${record.name} | Policy date: ${match.date} | Producer: ${match.producer} | Chargeback: $${Math.abs(record.amount)}`);
                                 cancellations.push({
                                     name: record.name,
                                     producer: match.producer,
                                     amount: Math.abs(record.amount),
-                                    policyDate: match.date
+                                    policyDate: match.date,
+                                    company: record.company
                                 });
                             }
+                        } else if (isRecent && !companiesMatch) {
+                            console.log(`ENDORSEMENT (within 12 months but COMPANY MISMATCH - IGNORE): ${record.name} | Statement: ${record.company} | Tracker: ${match.company}`);
+                            ignoredTransactions.push({
+                                name: record.name,
+                                type: record.amount > 0 ? 'Endorsement' : 'Negative Endorsement',
+                                reason: `Company mismatch (Statement: ${record.company}, Tracker: ${match.company})`,
+                                amount: Math.abs(record.amount)
+                            });
                         } else {
                             console.log(`ENDORSEMENT (>12 months old - IGNORE): ${record.name} | Policy date: ${match.date} | Amount: $${record.amount}`);
-                            // Don't add to endorsements or cancellations - policy too old
                             ignoredTransactions.push({
                                 name: record.name,
                                 type: record.amount > 0 ? 'Endorsement' : 'Negative Endorsement',
