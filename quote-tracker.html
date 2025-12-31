@@ -736,14 +736,6 @@
         let unsubscribe = null;
         let currentEditId = null;
 
-        // Make functions available globally
-        window.signOut = signOutUser;
-        window.toggleQuickEntry = toggleQuickEntry;
-        window.applyFilters = applyFilters;
-        window.editQuote = editQuote;
-        window.deleteQuote = deleteQuote;
-        window.closeEditModal = closeEditModal;
-
         // Auth state observer - redirect if not logged in
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -775,6 +767,11 @@
             const card = document.getElementById('quickEntryCard');
             card.classList.toggle('show');
         }
+
+        // Make functions globally available
+        window.signOut = signOutUser;
+        window.toggleQuickEntry = toggleQuickEntry;
+        window.applyFilters = applyFilters;
 
         // Subscribe to quotes
         function subscribeToQuotes() {
