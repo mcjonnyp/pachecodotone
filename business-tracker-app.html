@@ -827,7 +827,7 @@
         // Subscribe to real-time policy updates
         function subscribeToPolicies() {
             const policiesRef = collection(db, 'policies');
-            const q = query(policiesRef, orderBy('createdAt', 'desc'));
+            const q = query(policiesRef, orderBy('date', 'desc'));
             
             unsubscribe = onSnapshot(q, (snapshot) => {
                 policies = [];
