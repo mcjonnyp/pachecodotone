@@ -757,8 +757,8 @@
                 // Subscribe to real-time updates
                 subscribeToQuotes();
             } else {
-                // User is signed out - redirect to login
-                window.location.href = 'business-tracker-login.html';
+                // User is signed out - redirect to login with return URL
+                window.location.href = 'login.html?redirect=quote-tracker.html';
             }
         });
 
