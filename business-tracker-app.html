@@ -551,7 +551,7 @@
                         </div>
                         <div class="form-group">
                             <label for="policyType">Policy Type</label>
-                            <select id="policyType" required>
+                            <select id="policyType" required onchange="toggleItemsField()">
                                 <option value="">Select type</option>
                                 <option value="Auto">Auto</option>
                                 <option value="Homeowners">Homeowners</option>
@@ -564,9 +564,9 @@
                                 <option value="Other">Other</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label for="items">Items</label>
-                            <input type="text" id="items" placeholder="2 autos, 1 home">
+                        <div class="form-group" id="itemsGroup" style="display: none;">
+                            <label for="items">Number of Vehicles</label>
+                            <input type="number" id="items" min="1" max="10" value="1" placeholder="1">
                         </div>
                         <div class="form-group">
                             <label for="company">Company</label>
@@ -718,7 +718,7 @@
                     </div>
                     <div class="form-group">
                         <label for="editPolicyType">Policy Type</label>
-                        <select id="editPolicyType" required>
+                        <select id="editPolicyType" required onchange="toggleEditItemsField()">
                             <option value="Auto">Auto</option>
                             <option value="Homeowners">Homeowners</option>
                             <option value="Renters">Renters</option>
@@ -730,9 +730,9 @@
                             <option value="Other">Other</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="editItems">Items</label>
-                        <input type="text" id="editItems">
+                    <div class="form-group" id="editItemsGroup" style="display: none;">
+                        <label for="editItems">Number of Vehicles</label>
+                        <input type="number" id="editItems" min="1" max="10" value="1">
                     </div>
                     <div class="form-group">
                         <label for="editCompany">Company</label>
@@ -847,11 +847,15 @@
         document.getElementById('policyForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            const policyType = document.getElementById('policyType').value;
+            const itemsCount = policyType === 'Auto' ? parseInt(document.getElementById('items').value) || 1 : 1;
+            const itemsText = policyType === 'Auto' ? `${itemsCount} vehicle${itemsCount > 1 ? 's' : ''}` : '1';
+            
             const policy = {
                 date: document.getElementById('date').value,
                 customer: document.getElementById('customer').value,
-                policyType: document.getElementById('policyType').value,
-                items: document.getElementById('items').value,
+                policyType: policyType,
+                items: itemsText,
                 company: document.getElementById('company').value,
                 premium: parseFloat(document.getElementById('premium').value),
                 referralSource: document.getElementById('referralSource').value,
@@ -911,11 +915,15 @@
             e.preventDefault();
             
             const id = document.getElementById('editId').value;
+            const policyType = document.getElementById('editPolicyType').value;
+            const itemsCount = policyType === 'Auto' ? parseInt(document.getElementById('editItems').value) || 1 : 1;
+            const itemsText = policyType === 'Auto' ? `${itemsCount} vehicle${itemsCount > 1 ? 's' : ''}` : '1';
+            
             const policyData = {
                 date: document.getElementById('editDate').value,
                 customer: document.getElementById('editCustomer').value,
-                policyType: document.getElementById('editPolicyType').value,
-                items: document.getElementById('editItems').value,
+                policyType: policyType,
+                items: itemsText,
                 company: document.getElementById('editCompany').value,
                 premium: parseFloat(document.getElementById('editPremium').value),
                 referralSource: document.getElementById('editReferralSource').value,
@@ -938,6 +946,34 @@
             const card = document.getElementById('quickEntryCard');
             card.classList.toggle('show');
         }
+
+        function toggleItemsField() {
+            const policyType = document.getElementById('policyType').value;
+            const itemsGroup = document.getElementById('itemsGroup');
+            
+            if (policyType === 'Auto') {
+                itemsGroup.style.display = 'flex';
+            } else {
+                itemsGroup.style.display = 'none';
+                document.getElementById('items').value = '1';
+            }
+        }
+
+        function toggleEditItemsField() {
+            const policyType = document.getElementById('editPolicyType').value;
+            const itemsGroup = document.getElementById('editItemsGroup');
+            
+            if (policyType === 'Auto') {
+                itemsGroup.style.display = 'flex';
+            } else {
+                itemsGroup.style.display = 'none';
+                document.getElementById('editItems').value = '1';
+            }
+        }
+
+        // Make functions available globally
+        window.toggleItemsField = toggleItemsField;
+        window.toggleEditItemsField = toggleEditItemsField;
 
         function updateDashboard() {
             const monthFilter = document.getElementById('monthFilter').value;
@@ -1082,7 +1118,17 @@
             document.getElementById('editDate').value = policy.date;
             document.getElementById('editCustomer').value = policy.customer;
             document.getElementById('editPolicyType').value = policy.policyType;
-            document.getElementById('editItems').value = policy.items;
+            
+            // Parse items count for Auto policies
+            if (policy.policyType === 'Auto' && policy.items) {
+                const itemsMatch = policy.items.match(/(\d+)/);
+                document.getElementById('editItems').value = itemsMatch ? itemsMatch[1] : '1';
+                document.getElementById('editItemsGroup').style.display = 'flex';
+            } else {
+                document.getElementById('editItems').value = '1';
+                document.getElementById('editItemsGroup').style.display = 'none';
+            }
+            
             document.getElementById('editCompany').value = policy.company;
             document.getElementById('editPremium').value = policy.premium;
             document.getElementById('editReferralSource').value = policy.referralSource;
