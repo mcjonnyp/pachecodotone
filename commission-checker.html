@@ -722,9 +722,19 @@
             const endorsements = [];
             const missingPolicies = [];
 
+            console.log(`\n=== PROCESSING ${records.length} RECORDS ===`);
+
             // Get date from 12 months ago for rolling window
             const twelveMonthsAgo = new Date();
             twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+            let debugCounts = {
+                newBusinessDetected: 0,
+                renewalDetected: 0,
+                cancellationDetected: 0,
+                endorsementDetected: 0,
+                uncategorized: 0
+            };
 
             for (const record of records) {
                 const reason = record.reason.toLowerCase();
@@ -735,25 +745,32 @@
                 let isCancellation = false;
                 let isEndorsement = false;
 
-                // Check for new business
-                if (reason.includes('new business') || reason.includes('new policy')) {
+                // Check for new business (must be exact match to avoid false positives)
+                if (reason.includes('new business') || reason === 'new policy') {
                     isNewBusiness = true;
+                    debugCounts.newBusinessDetected++;
+                    console.log(`NEW BUSINESS: ${record.name} | Reason: "${record.reason}" | Amount: $${record.amount}`);
                 }
                 // Check for renewal
-                else if (reason.includes('renew') || reason.includes('ren') || reason.includes('renewal')) {
+                else if (reason.includes('renew') || reason === 'ren' || reason.includes('renewal')) {
                     isRenewal = true;
+                    debugCounts.renewalDetected++;
                 }
                 // Check for cancellation
                 else if (reason.includes('cancel')) {
                     isCancellation = true;
+                    debugCounts.cancellationDetected++;
                 }
                 // Check for endorsement/policy change
                 else if (reason.includes('endorsement') || reason.includes('policy change') || reason.includes('policy endorsement')) {
                     isEndorsement = true;
+                    debugCounts.endorsementDetected++;
                 }
                 // Default to renewal if unclear
                 else {
                     isRenewal = true;
+                    debugCounts.uncategorized++;
+                    console.log(`UNCATEGORIZED (treating as renewal): ${record.name} | Reason: "${record.reason}"`);
                 }
 
                 // Process based on transaction type
@@ -770,6 +787,7 @@
 
                         if (!isRecent) {
                             // Policy older than 12 months - shouldn't be "new business"
+                            console.log(`  ⚠️ Found in tracker but > 12 months old: ${match.date}`);
                             missingPolicies.push({
                                 name: record.name,
                                 amount: record.amount,
@@ -783,6 +801,7 @@
                             match.referralSource.toLowerCase().includes('re-write');
 
                         if (isRewrite) {
+                            console.log(`  🔄 RE-WRITE: ${match.producer}`);
                             rewrites.push({
                                 name: record.name,
                                 producer: match.producer,
@@ -791,6 +810,7 @@
                                 amount: record.amount
                             });
                         } else {
+                            console.log(`  ✅ MATCHED: ${match.producer} | Date: ${match.date}`);
                             newBusiness.push({
                                 name: record.name,
                                 producer: match.producer,
@@ -801,6 +821,7 @@
                         }
                     } else {
                         // Not in tracker but marked as "new business" - FLAG IT
+                        console.log(`  ❌ NOT IN TRACKER`);
                         missingPolicies.push({
                             name: record.name,
                             amount: record.amount,
@@ -848,6 +869,21 @@
                     }
                 }
             }
+
+            console.log(`\n=== DETECTION SUMMARY ===`);
+            console.log(`New Business detected: ${debugCounts.newBusinessDetected}`);
+            console.log(`Renewals detected: ${debugCounts.renewalDetected}`);
+            console.log(`Cancellations detected: ${debugCounts.cancellationDetected}`);
+            console.log(`Endorsements detected: ${debugCounts.endorsementDetected}`);
+            console.log(`Uncategorized: ${debugCounts.uncategorized}`);
+            
+            console.log(`\n=== CATEGORIZATION RESULTS ===`);
+            console.log(`New Business (in tracker): ${newBusiness.length}`);
+            console.log(`Missing from tracker: ${missingPolicies.length}`);
+            console.log(`Re-writes: ${rewrites.length}`);
+            console.log(`Renewals: ${renewals.length}`);
+            console.log(`Endorsements: ${endorsements.length}`);
+            console.log(`Cancellations: ${cancellations.length}`);
 
             resultsData = { newBusiness, rewrites, renewals, cancellations, endorsements, missingPolicies };
             displayResults();
