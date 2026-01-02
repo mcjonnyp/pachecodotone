@@ -418,17 +418,40 @@
                 reader.onload = (e) => {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const policies = XLSX.utils.sheet_to_json(sheet);
                     
-                    if (policies.length === 0) {
-                        throw new Error('Excel file is empty');
+                    // Handle multiple sheets (NBL format has months as sheets)
+                    const sheetNames = workbook.SheetNames;
+                    let allPolicies = [];
+                    
+                    // Check if this is a multi-sheet format (NBL style)
+                    const monthSheets = sheetNames.filter(name => 
+                        ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].includes(name)
+                    );
+                    
+                    if (monthSheets.length > 0) {
+                        // NBL format: read each month sheet
+                        showStatus(`Found NBL format with ${monthSheets.length} month sheets. Processing...`, 'processing');
+                        
+                        for (const sheetName of monthSheets) {
+                            const sheet = workbook.Sheets[sheetName];
+                            // Headers are in row 4 (index 3) in NBL format
+                            const policies = XLSX.utils.sheet_to_json(sheet, { range: 3 });
+                            allPolicies = allPolicies.concat(policies);
+                        }
+                    } else {
+                        // Single sheet format
+                        const sheet = workbook.Sheets[sheetNames[0]];
+                        allPolicies = XLSX.utils.sheet_to_json(sheet);
+                    }
+                    
+                    if (allPolicies.length === 0) {
+                        throw new Error('Excel file is empty or no valid data found');
                     }
 
                     const year = yearSelect.value;
                     
                     // Parse and format policies
-                    parsedPolicies = policies.map(policy => {
+                    parsedPolicies = allPolicies.map(policy => {
                         // Handle date - convert MM/DD to YYYY-MM-DD
                         let date = policy['Date'] || policy['date'];
                         if (date) {
@@ -444,6 +467,11 @@
                                 const day = parts[1].padStart(2, '0');
                                 date = `${year}-${month}-${day}`;
                             }
+                            // If it's already a date object or datetime string
+                            else if (date instanceof Date || (typeof date === 'string' && date.includes('-'))) {
+                                const d = new Date(date);
+                                date = `${year}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                            }
                         }
 
                         // Parse premium - CRITICAL FIX
@@ -456,22 +484,22 @@
                         premium = parseFloat(premium) || 0;
 
                         // Detect if Allstate
-                        const company = (policy['Company'] || policy['company'] || '').trim();
+                        const company = (policy['Company'] || policy['company'] || '').toString().trim();
                         const isAllstate = company.toLowerCase().includes('allstate');
 
                         return {
                             date: date,
-                            customer: (policy['Customer'] || policy['customer'] || '').trim(),
-                            policyType: (policy['Policy Type'] || policy['policyType'] || policy['Type'] || '').trim(),
-                            items: (policy['Items'] || policy['items'] || '').trim(),
+                            customer: (policy['Customer'] || policy['customer'] || '').toString().trim(),
+                            policyType: (policy['Policy Type'] || policy['policyType'] || policy['Type'] || '').toString().trim(),
+                            items: (policy['Items'] || policy['items'] || '').toString().trim(),
                             company: company,
                             premium: premium, // Now properly converted to number
-                            referralSource: (policy['Referral Source'] || policy['referralSource'] || policy['Referral'] || '').trim(),
-                            producer: (policy['Producer'] || policy['producer'] || '').trim(),
+                            referralSource: (policy['Source'] || policy['Referral Source'] || policy['referralSource'] || policy['Referral'] || '').toString().trim(),
+                            producer: (policy['Producer'] || policy['producer'] || '').toString().trim(),
                             isAllstate: isAllstate,
                             importYear: year // Track which year this import was for
                         };
-                    });
+                    }).filter(p => p.customer && p.date); // Filter out empty rows
 
                     displayPreview();
                     showStatus(`✅ File loaded successfully! ${parsedPolicies.length} policies found.`, 'success');
