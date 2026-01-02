@@ -453,7 +453,6 @@
                     }
 
                     const year = yearSelect.value;
-                    
                     // Parse and format policies
                     parsedPolicies = allPolicies.map(policy => {
                         // Handle date - convert MM/DD to YYYY-MM-DD
@@ -487,22 +486,41 @@
                         }
                         premium = parseFloat(premium) || 0;
 
+                        // Helper function to safely get string value (handle NaN, undefined, null)
+                        const safeString = (value) => {
+                            if (value === null || value === undefined || value === '' || 
+                                (typeof value === 'number' && isNaN(value)) ||
+                                (typeof value === 'string' && value.toLowerCase() === 'nan')) {
+                                return '';
+                            }
+                            return value.toString().trim();
+                        };
+
                         // Detect if Allstate
-                        const company = (policy['Company'] || policy['company'] || '').toString().trim();
+                        const company = safeString(policy['Company'] || policy['company']);
                         const isAllstate = company.toLowerCase().includes('allstate');
 
-                        return {
-                            date: date,
-                            customer: (policy['Customer'] || policy['customer'] || '').toString().trim(),
-                            policyType: (policy['Policy Type'] || policy['policyType'] || policy['Type'] || '').toString().trim(),
-                            items: (policy['Items'] || policy['items'] || '').toString().trim(),
+                        // Build policy object without undefined/NaN values
+                        const policyData = {
+                            date: date || '',
+                            customer: safeString(policy['Customer'] || policy['customer']),
+                            policyType: safeString(policy['Policy Type'] || policy['policyType'] || policy['Type']),
+                            items: safeString(policy['Items'] || policy['items']),
                             company: company,
-                            premium: premium, // Now properly converted to number
-                            referralSource: (policy['Source'] || policy['Referral Source'] || policy['referralSource'] || policy['Referral'] || '').toString().trim(),
-                            producer: (policy['Producer'] || policy['producer'] || '').toString().trim(),
+                            premium: premium,
+                            referralSource: safeString(policy['Source'] || policy['Referral Source'] || policy['referralSource'] || policy['Referral']),
+                            producer: safeString(policy['Producer'] || policy['producer']),
                             isAllstate: isAllstate,
-                            importYear: year // Track which year this import was for
+                            importYear: year
                         };
+
+                        // Add phone only if it exists
+                        const phone = safeString(policy['Phone'] || policy['phone']);
+                        if (phone) {
+                            policyData.phone = phone;
+                        }
+
+                        return policyData;
                     }).filter(p => p.customer && p.date); // Filter out empty rows
 
                     displayPreview();
@@ -576,6 +594,7 @@
             }
 
             console.log('✅ Starting upload...');
+            console.log('First policy sample:', JSON.stringify(parsedPolicies[0], null, 2));
 
             try {
                 uploadBtn.disabled = true;
@@ -589,10 +608,25 @@
                 let uploaded = 0;
                 let errors = 0;
 
-                for (const policy of parsedPolicies) {
+                for (let i = 0; i < parsedPolicies.length; i++) {
+                    const policy = parsedPolicies[i];
+                    
                     try {
-                        console.log(`Uploading policy ${uploaded + 1}:`, policy.customer);
-                        await addDoc(policiesRef, policy);
+                        // Log first few in detail
+                        if (i < 3) {
+                            console.log(`Uploading policy ${i + 1}/${parsedPolicies.length}:`, policy.customer, policy);
+                        } else if ((i + 1) % 10 === 0) {
+                            console.log(`Uploading policy ${i + 1}/${parsedPolicies.length}:`, policy.customer);
+                        }
+                        
+                        // Add timeout to detect hanging
+                        const uploadPromise = addDoc(policiesRef, policy);
+                        const timeoutPromise = new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Upload timeout after 10 seconds')), 10000)
+                        );
+                        
+                        await Promise.race([uploadPromise, timeoutPromise]);
+                        
                         uploaded++;
                         
                         // Update progress
@@ -600,13 +634,15 @@
                         progressFill.style.width = percent + '%';
                         progressText.textContent = `${uploaded} / ${parsedPolicies.length}`;
                         
-                        // Log every 10 policies
-                        if (uploaded % 10 === 0) {
-                            console.log(`✅ Uploaded ${uploaded} policies...`);
-                        }
                     } catch (err) {
                         errors++;
-                        console.error(`❌ Error uploading policy for ${policy.customer}:`, err);
+                        console.error(`❌ Error uploading policy ${i + 1} for ${policy.customer}:`, err);
+                        console.error('Failed policy data:', policy);
+                        
+                        // If too many errors in a row, stop
+                        if (errors > 5 && uploaded === 0) {
+                            throw new Error(`Too many upload failures. Check Firebase permissions and data format. Last error: ${err.message}`);
+                        }
                     }
                 }
 
