@@ -273,7 +273,7 @@
         </header>
 
         <div class="alert">
-            <strong>⚠️ Important:</strong> Select the year these policies are from. Dates in Excel (12/15) will be converted to YYYY-MM-DD format (2023-12-15).
+            <strong>⚠️ Important:</strong> Select the year these policies are from. Dates in Excel (12/15) will be converted to YYYY-MM-DD format (2023-12-15). Batch upload uses Firebase batch writes for faster, more reliable imports.
         </div>
 
         <div class="card">
@@ -335,7 +335,7 @@
                 </div>
 
                 <button class="btn btn-primary" id="uploadBtn">
-                    📤 Upload to Firebase
+                    📤 Upload to Firebase (Batch Mode)
                 </button>
             </div>
         </div>
@@ -343,7 +343,7 @@
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, writeBatch, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         // Firebase config
         const firebaseConfig = {
@@ -371,10 +371,6 @@
         const progressText = document.getElementById('progressText');
 
         let parsedPolicies = [];
-
-        console.log('✅ Script loaded');
-        console.log('✅ Firebase initialized');
-        console.log('✅ Upload button found:', uploadBtn !== null);
 
         uploadArea.addEventListener('click', () => {
             if (!yearSelect.value) {
@@ -453,6 +449,7 @@
                     }
 
                     const year = yearSelect.value;
+                    
                     // Parse and format policies
                     parsedPolicies = allPolicies.map(policy => {
                         // Handle date - convert MM/DD to YYYY-MM-DD
@@ -486,41 +483,22 @@
                         }
                         premium = parseFloat(premium) || 0;
 
-                        // Helper function to safely get string value (handle NaN, undefined, null)
-                        const safeString = (value) => {
-                            if (value === null || value === undefined || value === '' || 
-                                (typeof value === 'number' && isNaN(value)) ||
-                                (typeof value === 'string' && value.toLowerCase() === 'nan')) {
-                                return '';
-                            }
-                            return value.toString().trim();
-                        };
-
                         // Detect if Allstate
-                        const company = safeString(policy['Company'] || policy['company']);
+                        const company = (policy['Company'] || policy['company'] || '').toString().trim();
                         const isAllstate = company.toLowerCase().includes('allstate');
 
-                        // Build policy object without undefined/NaN values
-                        const policyData = {
-                            date: date || '',
-                            customer: safeString(policy['Customer'] || policy['customer']),
-                            policyType: safeString(policy['Policy Type'] || policy['policyType'] || policy['Type']),
-                            items: safeString(policy['Items'] || policy['items']),
+                        return {
+                            date: date,
+                            customer: (policy['Customer'] || policy['customer'] || '').toString().trim(),
+                            policyType: (policy['Policy Type'] || policy['policyType'] || policy['Type'] || '').toString().trim(),
+                            items: (policy['Items'] || policy['items'] || '').toString().trim(),
                             company: company,
-                            premium: premium,
-                            referralSource: safeString(policy['Source'] || policy['Referral Source'] || policy['referralSource'] || policy['Referral']),
-                            producer: safeString(policy['Producer'] || policy['producer']),
+                            premium: premium, // Now properly converted to number
+                            referralSource: (policy['Source'] || policy['Referral Source'] || policy['referralSource'] || policy['Referral'] || '').toString().trim(),
+                            producer: (policy['Producer'] || policy['producer'] || '').toString().trim(),
                             isAllstate: isAllstate,
-                            importYear: year
+                            importYear: year // Track which year this import was for
                         };
-
-                        // Add phone only if it exists
-                        const phone = safeString(policy['Phone'] || policy['phone']);
-                        if (phone) {
-                            policyData.phone = phone;
-                        }
-
-                        return policyData;
                     }).filter(p => p.customer && p.date); // Filter out empty rows
 
                     displayPreview();
@@ -552,10 +530,6 @@
             // Calculate stats
             const totalPremium = parsedPolicies.reduce((sum, p) => sum + p.premium, 0);
             const avgPremium = parsedPolicies.length > 0 ? totalPremium / parsedPolicies.length : 0;
-            const policyTypes = {};
-            parsedPolicies.forEach(p => {
-                policyTypes[p.policyType] = (policyTypes[p.policyType] || 0) + 1;
-            });
 
             stats.innerHTML = `
                 <div class="stat">
@@ -580,87 +554,51 @@
         }
 
         uploadBtn.addEventListener('click', async () => {
-            console.log('🔘 Upload button clicked');
-            console.log('📊 Policies to upload:', parsedPolicies.length);
-            
-            if (parsedPolicies.length === 0) {
-                showStatus('❌ No policies to upload. Please load a file first.', 'error');
+            if (!confirm(`Upload ${parsedPolicies.length} policies to Firebase using batch writes? This cannot be undone.`)) {
                 return;
             }
-            
-            if (!confirm(`Upload ${parsedPolicies.length} policies to Firebase? This cannot be undone.`)) {
-                console.log('❌ User cancelled');
-                return;
-            }
-
-            console.log('✅ Starting upload...');
-            console.log('First policy sample:', JSON.stringify(parsedPolicies[0], null, 2));
 
             try {
                 uploadBtn.disabled = true;
                 uploadBtn.textContent = 'Uploading...';
                 progressContainer.style.display = 'block';
-                showStatus('Uploading to Firebase...', 'processing');
+                showStatus('Uploading to Firebase in batches...', 'processing');
 
                 const policiesRef = collection(db, 'policies');
-                console.log('📝 Firebase collection reference created');
-                
                 let uploaded = 0;
-                let errors = 0;
+                const BATCH_SIZE = 500; // Firestore limit is 500 per batch
 
-                for (let i = 0; i < parsedPolicies.length; i++) {
-                    const policy = parsedPolicies[i];
-                    
-                    try {
-                        // Log first few in detail
-                        if (i < 3) {
-                            console.log(`Uploading policy ${i + 1}/${parsedPolicies.length}:`, policy.customer, policy);
-                        } else if ((i + 1) % 10 === 0) {
-                            console.log(`Uploading policy ${i + 1}/${parsedPolicies.length}:`, policy.customer);
-                        }
-                        
-                        // Add timeout to detect hanging
-                        const uploadPromise = addDoc(policiesRef, policy);
-                        const timeoutPromise = new Promise((_, reject) => 
-                            setTimeout(() => reject(new Error('Upload timeout after 10 seconds')), 10000)
-                        );
-                        
-                        await Promise.race([uploadPromise, timeoutPromise]);
-                        
-                        uploaded++;
-                        
-                        // Update progress
-                        const percent = (uploaded / parsedPolicies.length) * 100;
-                        progressFill.style.width = percent + '%';
-                        progressText.textContent = `${uploaded} / ${parsedPolicies.length}`;
-                        
-                    } catch (err) {
-                        errors++;
-                        console.error(`❌ Error uploading policy ${i + 1} for ${policy.customer}:`, err);
-                        console.error('Failed policy data:', policy);
-                        
-                        // If too many errors in a row, stop
-                        if (errors > 5 && uploaded === 0) {
-                            throw new Error(`Too many upload failures. Check Firebase permissions and data format. Last error: ${err.message}`);
-                        }
-                    }
+                // Split into batches
+                for (let i = 0; i < parsedPolicies.length; i += BATCH_SIZE) {
+                    const batchPolicies = parsedPolicies.slice(i, i + BATCH_SIZE);
+                    const batch = writeBatch(db);
+
+                    // Add all policies in this batch
+                    batchPolicies.forEach(policy => {
+                        const docRef = doc(policiesRef);
+                        batch.set(docRef, policy);
+                    });
+
+                    // Commit the batch
+                    await batch.commit();
+                    uploaded += batchPolicies.length;
+
+                    // Update progress
+                    const percent = (uploaded / parsedPolicies.length) * 100;
+                    progressFill.style.width = percent + '%';
+                    progressText.textContent = `${uploaded} / ${parsedPolicies.length}`;
+
+                    console.log(`✅ Batch ${Math.ceil(i / BATCH_SIZE) + 1} complete: ${uploaded} / ${parsedPolicies.length}`);
                 }
 
-                console.log(`✅ Upload complete: ${uploaded} policies, ${errors} errors`);
-
-                if (errors > 0) {
-                    showStatus(`⚠️ Uploaded ${uploaded} policies with ${errors} errors. Check console for details.`, 'error');
-                } else {
-                    showStatus(`🎉 Success! Uploaded ${uploaded} policies to Firebase.`, 'success');
-                }
+                showStatus(`🎉 Success! Uploaded ${uploaded} policies to Firebase.`, 'success');
                 uploadBtn.textContent = '✅ Upload Complete';
                 
             } catch (error) {
-                console.error('❌ Upload Error:', error);
-                console.error('Error stack:', error.stack);
+                console.error('Error:', error);
                 showStatus('❌ Upload Error: ' + error.message, 'error');
                 uploadBtn.disabled = false;
-                uploadBtn.textContent = '📤 Upload to Firebase';
+                uploadBtn.textContent = '📤 Upload to Firebase (Batch Mode)';
             }
         });
 
