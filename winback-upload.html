@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Winback List | pacheco.one</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --background: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --sans: 'Outfit', -apple-system, sans-serif;
+        }
+
+        body {
+            font-family: var(--sans);
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 24px;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        #status {
+            margin-top: 24px;
+            padding: 20px;
+            border-radius: 12px;
+            display: none;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .status-processing {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        .preview {
+            margin-top: 24px;
+            display: none;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 16px;
+        }
+
+        .preview-table th {
+            background: var(--background);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-light);
+        }
+
+        .preview-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .info-box {
+            background: #dbeafe;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .info-box ul {
+            margin: 12px 0 0 20px;
+        }
+
+        .info-box li {
+            margin: 8px 0;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: var(--sans);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-primary:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .stat {
+            background: var(--background);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📤 Upload Winback List</h1>
+            <p class="subtitle">Import your terminated clients to start automated outreach</p>
+        </header>
+
+        <div class="info-box">
+            <strong>📋 Required Excel Format:</strong>
+            <ul>
+                <li><strong>Insured First Name</strong> - Client's first name</li>
+                <li><strong>Insured Last Name</strong> - Client's last name</li>
+                <li><strong>Email</strong> - Contact email</li>
+                <li><strong>Phone Number</strong> - Contact phone</li>
+                <li><strong>Termination Effective Date</strong> - When policy ended (MM/DD/YYYY)</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📋</div>
+                <div style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">
+                    Drop your Excel file here
+                </div>
+                <div style="font-size: 16px; color: var(--text-light); margin-bottom: 16px;">
+                    or click to browse
+                </div>
+                <div style="font-size: 13px; color: var(--text-light);">
+                    Supports .xlsx files (2026_winbacks.xlsx)
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept=".xlsx">
+            </div>
+
+            <div id="status"></div>
+
+            <div class="preview" id="preview">
+                <h3>Preview (First 5 Clients)</h3>
+                <table class="preview-table" id="previewTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Term Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewBody">
+                    </tbody>
+                </table>
+
+                <div class="stats" id="stats"></div>
+
+                <button class="btn btn-primary" id="uploadBtn" style="margin-top: 20px; width: 100%;">
+                    📤 Upload to System
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CHANGE THIS TO YOUR WORKER URL
+        const WORKER_URL = 'https://winback-automation.YOUR-SUBDOMAIN.workers.dev';
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const status = document.getElementById('status');
+        const preview = document.getElementById('preview');
+        const previewBody = document.getElementById('previewBody');
+        const stats = document.getElementById('stats');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        let parsedClients = [];
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        async function handleFile(file) {
+            try {
+                showStatus('Processing file...', 'processing');
+                preview.style.display = 'none';
+                
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data);
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const clients = XLSX.utils.sheet_to_json(sheet);
+                
+                if (clients.length === 0) {
+                    throw new Error('Excel file is empty');
+                }
+
+                // Validate required fields
+                const requiredFields = ['Insured First Name', 'Insured Last Name', 'Email', 'Termination Effective Date'];
+                const firstRow = clients[0];
+                const missingFields = requiredFields.filter(field => !firstRow.hasOwnProperty(field));
+                
+                if (missingFields.length > 0) {
+                    throw new Error(`Missing required columns: ${missingFields.join(', ')}`);
+                }
+
+                // Format clients
+                parsedClients = clients.map((client, index) => ({
+                    id: `client-${Date.now()}-${index}`,
+                    firstName: client['Insured First Name']?.trim() || '',
+                    lastName: client['Insured Last Name']?.trim() || '',
+                    email: client['Email']?.trim() || '',
+                    phone: client['Phone Number']?.trim() || '',
+                    address: client['Street Address']?.trim() || '',
+                    city: client['City']?.trim() || '',
+                    state: client['State']?.trim() || '',
+                    zip: client['Zip Code']?.trim() || '',
+                    termDate: client['Termination Effective Date']
+                }));
+
+                // Show preview
+                displayPreview();
+                showStatus(`✅ File loaded successfully! ${parsedClients.length} clients found.`, 'success');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        function displayPreview() {
+            // Show first 5
+            const previewClients = parsedClients.slice(0, 5);
+            previewBody.innerHTML = previewClients.map(c => `
+                <tr>
+                    <td><strong>${c.firstName} ${c.lastName}</strong></td>
+                    <td>${c.email || '—'}</td>
+                    <td>${c.phone || '—'}</td>
+                    <td>${c.termDate}</td>
+                </tr>
+            `).join('');
+
+            // Show stats
+            const emailCount = parsedClients.filter(c => c.email).length;
+            const phoneCount = parsedClients.filter(c => c.phone).length;
+
+            stats.innerHTML = `
+                <div class="stat">
+                    <div class="stat-value">${parsedClients.length}</div>
+                    <div class="stat-label">Total Clients</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${emailCount}</div>
+                    <div class="stat-label">With Email</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${phoneCount}</div>
+                    <div class="stat-label">With Phone</div>
+                </div>
+            `;
+
+            preview.style.display = 'block';
+        }
+
+        uploadBtn.addEventListener('click', async () => {
+            try {
+                uploadBtn.disabled = true;
+                showStatus('Uploading to system...', 'processing');
+
+                const response = await fetch(`${WORKER_URL}/upload-winbacks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clients: parsedClients })
+                });
+
+                if (response.ok) {
+                    showStatus(`🎉 Success! Uploaded ${parsedClients.length} clients. System will begin monitoring automatically at 9 AM daily.`, 'success');
+                    uploadBtn.textContent = '✅ Upload Complete';
+                } else {
+                    throw new Error('Upload failed: ' + await response.text());
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Upload Error: ' + error.message, 'error');
+                uploadBtn.disabled = false;
+            }
+        });
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = `status-${type}`;
+            status.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
