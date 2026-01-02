@@ -372,6 +372,10 @@
 
         let parsedPolicies = [];
 
+        console.log('✅ Script loaded');
+        console.log('✅ Firebase initialized');
+        console.log('✅ Upload button found:', uploadBtn !== null);
+
         uploadArea.addEventListener('click', () => {
             if (!yearSelect.value) {
                 showStatus('⚠️ Please select a year first!', 'error');
@@ -558,35 +562,69 @@
         }
 
         uploadBtn.addEventListener('click', async () => {
+            console.log('🔘 Upload button clicked');
+            console.log('📊 Policies to upload:', parsedPolicies.length);
+            
+            if (parsedPolicies.length === 0) {
+                showStatus('❌ No policies to upload. Please load a file first.', 'error');
+                return;
+            }
+            
             if (!confirm(`Upload ${parsedPolicies.length} policies to Firebase? This cannot be undone.`)) {
+                console.log('❌ User cancelled');
                 return;
             }
 
+            console.log('✅ Starting upload...');
+
             try {
                 uploadBtn.disabled = true;
+                uploadBtn.textContent = 'Uploading...';
                 progressContainer.style.display = 'block';
                 showStatus('Uploading to Firebase...', 'processing');
 
                 const policiesRef = collection(db, 'policies');
+                console.log('📝 Firebase collection reference created');
+                
                 let uploaded = 0;
+                let errors = 0;
 
                 for (const policy of parsedPolicies) {
-                    await addDoc(policiesRef, policy);
-                    uploaded++;
-                    
-                    // Update progress
-                    const percent = (uploaded / parsedPolicies.length) * 100;
-                    progressFill.style.width = percent + '%';
-                    progressText.textContent = `${uploaded} / ${parsedPolicies.length}`;
+                    try {
+                        console.log(`Uploading policy ${uploaded + 1}:`, policy.customer);
+                        await addDoc(policiesRef, policy);
+                        uploaded++;
+                        
+                        // Update progress
+                        const percent = (uploaded / parsedPolicies.length) * 100;
+                        progressFill.style.width = percent + '%';
+                        progressText.textContent = `${uploaded} / ${parsedPolicies.length}`;
+                        
+                        // Log every 10 policies
+                        if (uploaded % 10 === 0) {
+                            console.log(`✅ Uploaded ${uploaded} policies...`);
+                        }
+                    } catch (err) {
+                        errors++;
+                        console.error(`❌ Error uploading policy for ${policy.customer}:`, err);
+                    }
                 }
 
-                showStatus(`🎉 Success! Uploaded ${uploaded} policies to Firebase.`, 'success');
+                console.log(`✅ Upload complete: ${uploaded} policies, ${errors} errors`);
+
+                if (errors > 0) {
+                    showStatus(`⚠️ Uploaded ${uploaded} policies with ${errors} errors. Check console for details.`, 'error');
+                } else {
+                    showStatus(`🎉 Success! Uploaded ${uploaded} policies to Firebase.`, 'success');
+                }
                 uploadBtn.textContent = '✅ Upload Complete';
                 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('❌ Upload Error:', error);
+                console.error('Error stack:', error.stack);
                 showStatus('❌ Upload Error: ' + error.message, 'error');
                 uploadBtn.disabled = false;
+                uploadBtn.textContent = '📤 Upload to Firebase';
             }
         });
 
