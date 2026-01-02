@@ -512,6 +512,15 @@
         <!-- Main Container -->
         <div class="container">
             <!-- Dashboard Stats -->
+            <!-- Current Month Indicator -->
+            <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 13px; opacity: 0.9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Current Month Stats</div>
+                    <div style="font-size: 18px; font-weight: 800; margin-top: 2px;" id="currentMonthDisplay"></div>
+                </div>
+                <div style="font-size: 12px; opacity: 0.8;">Stats reset monthly</div>
+            </div>
+
             <div class="dashboard-stats">
                 <div class="stat-card">
                     <div class="stat-label">Total Policies</div>
@@ -977,29 +986,33 @@
         window.toggleEditItemsField = toggleEditItemsField;
 
         function updateDashboard() {
-            const monthFilter = document.getElementById('monthFilter').value;
-            let filteredPolicies = policies;
-
-            if (monthFilter) {
-                filteredPolicies = policies.filter(p => p.date.startsWith(monthFilter));
-            }
-
-            // Total policies
-            document.getElementById('totalPolicies').textContent = filteredPolicies.length;
-
-            // Total premium
-            const totalPremium = filteredPolicies.reduce((sum, p) => sum + p.premium, 0);
-            document.getElementById('totalPremium').textContent = '$' + totalPremium.toLocaleString('en-US', { maximumFractionDigits: 0 });
-
-            // Average premium
-            const avgPremium = filteredPolicies.length > 0 ? totalPremium / filteredPolicies.length : 0;
-            document.getElementById('avgPremium').textContent = '$' + avgPremium.toLocaleString('en-US', { maximumFractionDigits: 0 });
-
-            // Allstate policies count - CALENDAR MONTH ONLY
+            // ALWAYS show current month stats at the top (regardless of filter)
             const now = new Date();
             const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            const currentMonthPolicies = filteredPolicies.filter(p => p.date.startsWith(currentMonth));
-            const allstateCount = currentMonthPolicies.filter(p => p.isAllstate).length;
+            const currentMonthPolicies = policies.filter(p => p.date.startsWith(currentMonth));
+
+            // Display current month name
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthName = monthNames[now.getMonth()];
+            document.getElementById('currentMonthDisplay').textContent = `${monthName} ${now.getFullYear()}`;
+
+            // Total policies - CURRENT MONTH ONLY
+            document.getElementById('totalPolicies').textContent = currentMonthPolicies.length;
+
+            // Total premium - CURRENT MONTH ONLY
+            const totalPremium = currentMonthPolicies.reduce((sum, p) => sum + p.premium, 0);
+            document.getElementById('totalPremium').textContent = '$' + totalPremium.toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+            // Average premium - CURRENT MONTH ONLY
+            const avgPremium = currentMonthPolicies.length > 0 ? totalPremium / currentMonthPolicies.length : 0;
+            document.getElementById('avgPremium').textContent = '$' + avgPremium.toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+            // Allstate policies count - CURRENT MONTH ONLY
+            // Check both isAllstate flag AND company name contains "allstate"
+            const allstateCount = currentMonthPolicies.filter(p => {
+                return p.isAllstate || (p.company && p.company.toLowerCase().includes('allstate'));
+            }).length;
             
             document.getElementById('allstatePolicies').textContent = allstateCount;
             document.getElementById('allstateGoal').textContent = `of 32 monthly goal (${Math.round(allstateCount/32*100)}%)`;
