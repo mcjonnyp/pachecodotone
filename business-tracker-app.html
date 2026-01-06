@@ -538,7 +538,7 @@
                     <div class="stat-subtitle">Per policy</div>
                 </div>
                 <div class="stat-card" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white;">
-                    <div class="stat-label" style="color: rgba(255,255,255,0.9);">Allstate Policies</div>
+                    <div class="stat-label" style="color: rgba(255,255,255,0.9);">Allstate Items</div>
                     <div class="stat-value" id="allstatePolicies" style="color: white;">0</div>
                     <div class="stat-subtitle" id="allstateGoal" style="color: rgba(255,255,255,0.9);">of 32 monthly goal</div>
                 </div>
@@ -1010,14 +1010,21 @@
             const avgPremium = currentMonthPolicies.length > 0 ? totalPremium / currentMonthPolicies.length : 0;
             document.getElementById('avgPremium').textContent = '$' + avgPremium.toLocaleString('en-US', { maximumFractionDigits: 0 });
 
-            // Allstate policies count - CURRENT MONTH ONLY
-            // Check both isAllstate flag AND company name contains "allstate"
-            const allstateCount = currentMonthPolicies.filter(p => {
-                return p.isAllstate || (p.company && p.company.toLowerCase().includes('allstate'));
-            }).length;
+            // Allstate items count - CURRENT MONTH ONLY
+            // Sum up the number of items (vehicles) for Allstate policies
+            const allstateItems = currentMonthPolicies
+                .filter(p => p.isAllstate || (p.company && p.company.toLowerCase().includes('allstate')))
+                .reduce((total, p) => {
+                    // Parse items field: "2 vehicles" -> 2, "1 vehicle" -> 1
+                    if (p.items) {
+                        const match = p.items.match(/^(\d+)/);
+                        return total + (match ? parseInt(match[1]) : 1);
+                    }
+                    return total + 1;
+                }, 0);
             
-            document.getElementById('allstatePolicies').textContent = allstateCount;
-            document.getElementById('allstateGoal').textContent = `of 32 monthly goal (${Math.round(allstateCount/32*100)}%)`;
+            document.getElementById('allstatePolicies').textContent = allstateItems;
+            document.getElementById('allstateGoal').textContent = `of 32 monthly goal (${Math.round(allstateItems/32*100)}%)`;
 
         }
 
