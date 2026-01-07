@@ -195,7 +195,7 @@
                 return;
             }
 
-            if (!confirm(`Upload ${parsedClients.length} winback clients?`)) return;
+            if (!confirm(`Upload ${parsedClients.length} Winback clients?`)) return;
 
             try {
                 uploadBtn.disabled = true;
@@ -214,7 +214,7 @@
                     showStatus(`🎉 Success! Uploaded ${parsedClients.length} clients.`, 'success');
                     uploadBtn.textContent = '✅ Upload Complete';
                 } else {
-                    throw new Error(`Upload failed: ${response.status}`);
+                    throw new Error(`xUpload failed: ${response.status}`);
                 }
                 
             } catch (error) {
