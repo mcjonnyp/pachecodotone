@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Winback List | pacheco.one</title>
+    <title>Upload Active Policies | pacheco.one</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -43,15 +44,22 @@
         .stat { background: var(--background); padding: 16px; border-radius: 8px; text-align: center; }
         .stat-value { font-size: 28px; font-weight: 800; color: var(--primary); }
         .stat-label { font-size: 12px; color: var(--text-light); text-transform: uppercase; margin-top: 4px; }
+        .alert { background: #dbeafe; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3b82f6; }
+        .alert strong { display: block; margin-bottom: 8px; }
         .worker-url-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: var(--sans); font-size: 14px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>📤 Upload Winback List</h1>
-            <p class="subtitle">Import your terminated clients (418 clients)</p>
+            <h1>📋 Upload Active Policies</h1>
+            <p class="subtitle">Upload to Cloudflare Worker (No Firebase needed!)</p>
         </header>
+
+        <div class="alert">
+            <strong>💡 How this works:</strong>
+            <p>This uploads your active policies directly to Cloudflare Worker's KV storage. No Firebase permissions needed!</p>
+        </div>
 
         <div class="card">
             <label style="display: block; font-weight: 600; margin-bottom: 8px;">Cloudflare Worker URL:</label>
@@ -62,14 +70,20 @@
                 placeholder="https://winback-automation.YOUR-SUBDOMAIN.workers.dev"
                 value=""
             >
+            <p style="font-size: 13px; color: var(--text-light); margin-top: 8px;">
+                Enter your Cloudflare Worker URL (from the Workers dashboard)
+            </p>
 
-            <div class="upload-area" id="uploadArea">
+            <div class="upload-area" id="uploadArea" style="margin-top: 20px;">
                 <div class="upload-icon">📋</div>
                 <div style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">
-                    Drop 2026_winbacks.xlsx here
+                    Drop your Book of Business file here
                 </div>
                 <div style="font-size: 16px; color: var(--text-light); margin-bottom: 16px;">
                     or click to browse
+                </div>
+                <div style="font-size: 13px; color: var(--text-light);">
+                    Supports .xlsx files (BOB_CrossSellAudit)
                 </div>
                 <input type="file" id="fileInput" style="display: none;" accept=".xlsx">
             </div>
@@ -77,17 +91,20 @@
             <div id="status"></div>
 
             <div class="preview" id="preview">
-                <h3>Preview (First 5 Clients)</h3>
-                <table class="preview-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Term Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="previewBody"></tbody>
-                </table>
+                <h3>Preview (First 5 Policies)</h3>
+                <div style="overflow-x: auto;">
+                    <table class="preview-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Policy Number</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewBody"></tbody>
+                    </table>
+                </div>
 
                 <div class="stats" id="stats"></div>
 
@@ -108,12 +125,14 @@
         const stats = document.getElementById('stats');
         const uploadBtn = document.getElementById('uploadBtn');
 
-        let parsedClients = [];
+        let parsedPolicies = [];
 
         uploadArea.addEventListener('click', () => fileInput.click());
-        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); });
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.style.borderColor = 'var(--primary)'; });
+        uploadArea.addEventListener('dragleave', () => uploadArea.style.borderColor = '');
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
+            uploadArea.style.borderColor = '';
             const file = e.dataTransfer.files[0];
             if (file) handleFile(file);
         });
@@ -132,25 +151,28 @@
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const clients = XLSX.utils.sheet_to_json(sheet);
                     
-                    if (clients.length === 0) throw new Error('Excel file is empty');
+                    // Headers are in row 5 (index 4)
+                    const policies = XLSX.utils.sheet_to_json(sheet, { range: 4 });
+                    
+                    if (policies.length === 0) {
+                        throw new Error('Excel file is empty');
+                    }
 
-                    parsedClients = clients.map((c, i) => ({
-                        id: `client-${Date.now()}-${i}`,
-                        firstName: (c['Insured First Name'] || '').toString().trim(),
-                        lastName: (c['Insured Last Name'] || '').toString().trim(),
-                        email: (c['Email'] || '').toString().trim().toLowerCase(),
-                        phone: (c['Phone Number'] || '').toString().trim(),
-                        address: (c['Street Address'] || '').toString().trim(),
-                        city: (c['City'] || '').toString().trim(),
-                        state: (c['State'] || '').toString().trim(),
-                        zip: (c['Zip Code'] || '').toString().trim(),
-                        termDate: c['Termination Effective Date']
-                    })).filter(c => c.firstName && c.lastName && c.email);
+                    // Parse policies for Worker format
+                    parsedPolicies = policies.map(policy => ({
+                        firstName: (policy['Insured First Name'] || '').toString().trim().toUpperCase(),
+                        lastName: (policy['Insured Last Name'] || '').toString().trim().toUpperCase(),
+                        fullName: `${policy['Insured First Name'] || ''} ${policy['Insured Last Name'] || ''}`.trim().toUpperCase(),
+                        email: (policy['Insured Email'] || '').toString().trim().toLowerCase(),
+                        phone: (policy['Insured Phone'] || '').toString().trim(),
+                        policyNumber: (policy['Policy Number'] || '').toString().trim(),
+                        productName: (policy['Product Name'] || '').toString().trim(),
+                        renewalDate: (policy['Renewal Effective Date'] || '').toString().trim()
+                    })).filter(p => p.firstName && p.lastName); // Filter out empty rows
 
                     displayPreview();
-                    showStatus(`✅ File loaded! ${parsedClients.length} clients found.`, 'success');
+                    showStatus(`✅ File loaded successfully! ${parsedPolicies.length} active policies found.`, 'success');
                 };
                 
                 reader.readAsArrayBuffer(file);
@@ -162,25 +184,31 @@
         }
 
         function displayPreview() {
-            const preview5 = parsedClients.slice(0, 5);
-            previewBody.innerHTML = preview5.map(c => `
+            const previewPolicies = parsedPolicies.slice(0, 5);
+            previewBody.innerHTML = previewPolicies.map(p => `
                 <tr>
-                    <td><strong>${c.firstName} ${c.lastName}</strong></td>
-                    <td>${c.email}</td>
-                    <td>${c.termDate}</td>
+                    <td><strong>${p.fullName}</strong></td>
+                    <td>${p.email}</td>
+                    <td>${p.phone}</td>
+                    <td>${p.policyNumber}</td>
                 </tr>
             `).join('');
 
-            const withEmail = parsedClients.filter(c => c.email).length;
+            const withEmail = parsedPolicies.filter(p => p.email).length;
+            const withPhone = parsedPolicies.filter(p => p.phone).length;
 
             stats.innerHTML = `
                 <div class="stat">
-                    <div class="stat-value">${parsedClients.length}</div>
-                    <div class="stat-label">Total Clients</div>
+                    <div class="stat-value">${parsedPolicies.length}</div>
+                    <div class="stat-label">Active Policies</div>
                 </div>
                 <div class="stat">
                     <div class="stat-value">${withEmail}</div>
                     <div class="stat-label">With Email</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${withPhone}</div>
+                    <div class="stat-label">With Phone</div>
                 </div>
             `;
 
@@ -191,30 +219,48 @@
             const workerUrl = workerUrlInput.value.trim();
             
             if (!workerUrl) {
-                showStatus('❌ Please enter your Worker URL!', 'error');
+                showStatus('❌ Please enter your Cloudflare Worker URL first!', 'error');
                 return;
             }
 
-            if (!confirm(`Upload ${parsedClients.length} winback clients?`)) return;
+            if (!workerUrl.includes('workers.dev') && !workerUrl.includes('pacheco.one')) {
+                showStatus('❌ Invalid Worker URL. Should look like: https://winback-automation.your-subdomain.workers.dev', 'error');
+                return;
+            }
+
+            if (!confirm(`Upload ${parsedPolicies.length} active policies to Worker?\n\nThis will replace any existing active policies list.`)) {
+                return;
+            }
 
             try {
                 uploadBtn.disabled = true;
                 uploadBtn.textContent = 'Uploading...';
-                showStatus('Uploading to Worker...', 'processing');
+                showStatus('Uploading to Cloudflare Worker...', 'processing');
 
-                const endpoint = workerUrl.endsWith('/') ? workerUrl + 'upload-winbacks' : workerUrl + '/upload-winbacks';
+                const endpoint = workerUrl.endsWith('/') ? workerUrl + 'upload-active' : workerUrl + '/upload-active';
                 
+                console.log('Uploading to:', endpoint);
+                console.log('Policy count:', parsedPolicies.length);
+
                 const response = await fetch(endpoint, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ clients: parsedClients })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        policies: parsedPolicies
+                    })
                 });
 
+                console.log('Response status:', response.status);
+                const responseText = await response.text();
+                console.log('Response:', responseText);
+
                 if (response.ok) {
-                    showStatus(`🎉 Success! Uploaded ${parsedClients.length} clients.`, 'success');
+                    showStatus(`🎉 Success! Uploaded ${parsedPolicies.length} active policies to Worker.`, 'success');
                     uploadBtn.textContent = '✅ Upload Complete';
                 } else {
-                    throw new Error(`Upload failed: ${response.status}`);
+                    throw new Error(`Upload failed: ${response.status} - ${responseText}`);
                 }
                 
             } catch (error) {
