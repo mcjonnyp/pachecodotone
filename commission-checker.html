@@ -597,28 +597,32 @@
             const records = [];
 
             // Find column indices based on format
-            let nameCol, reasonCol, amountCol, companyCol;
+            let nameCol, reasonCol, amountCol, companyCol, policyCol;
 
             if (format === 'ivantage') {
                 nameCol = headers.findIndex(h => h && h.toLowerCase().includes('insured name'));
                 reasonCol = headers.findIndex(h => h && h.toLowerCase() === 'reason');
                 amountCol = headers.findIndex(h => h && h.toLowerCase() === 'amount');
                 companyCol = headers.findIndex(h => h && h.toLowerCase() === 'vendor');
+                policyCol = headers.findIndex(h => h && h.toLowerCase().includes('policy'));
             } else if (format === 'cabrillo') {
                 nameCol = headers.findIndex(h => h && h.toLowerCase().includes('insured name'));
                 reasonCol = headers.findIndex(h => h && h.toLowerCase().includes('transaction type'));
                 amountCol = headers.findIndex(h => h && h.toLowerCase().includes('commission paid'));
                 companyCol = headers.findIndex(h => h && h.toLowerCase().includes('producer code'));
+                policyCol = headers.findIndex(h => h && h.toLowerCase().includes('policy'));
             } else if (format === 'universal') {
                 nameCol = headers.findIndex(h => h && h.toLowerCase().includes('insured name'));
                 reasonCol = headers.findIndex(h => h && h.toLowerCase().includes('transaction type'));
                 amountCol = headers.findIndex(h => h && h.toLowerCase().includes('commission') && !h.toLowerCase().includes('rate'));
                 companyCol = -1; // Universal doesn't have a clear vendor column - uses policy prefix
+                policyCol = headers.findIndex(h => h && h.toLowerCase().includes('policy'));
             } else if (format === 'slide') {
                 nameCol = headers.findIndex(h => h && h.toLowerCase() === 'insured');
                 reasonCol = headers.findIndex(h => h && h.toLowerCase().includes('new/renewal'));
                 amountCol = headers.findIndex(h => h && h.toLowerCase().includes('commission payable'));
                 companyCol = headers.findIndex(h => h && h.toLowerCase() === 'territory');
+                policyCol = headers.findIndex(h => h && h.toLowerCase().includes('policy'));
             }
 
             if (nameCol === -1 || reasonCol === -1 || amountCol === -1) {
@@ -634,6 +638,7 @@
                 let reason = row[reasonCol] || '';
                 let amount = row[amountCol];
                 let company = companyCol >= 0 ? row[companyCol] : null;
+                let policyNumber = policyCol >= 0 ? row[policyCol] : null;
 
                 // Clean up amount - remove $ and commas, handle parentheses as negative
                 if (typeof amount === 'string') {
@@ -652,11 +657,17 @@
                     company = String(company).trim();
                 }
 
+                // Normalize policy number
+                if (policyNumber) {
+                    policyNumber = String(policyNumber).trim();
+                }
+
                 records.push({
                     name: row[nameCol],
                     reason: reason,
                     amount: amount,
                     company: company,
+                    policyNumber: policyNumber,
                     format: format
                 });
             }
@@ -835,6 +846,38 @@
 
             console.log(`\n=== PROCESSING ${records.length} RECORDS ===`);
 
+            // STEP 1: Detect and mark cancellation/reinstatement pairs
+            const cancelReinstatePairs = new Set();
+            
+            console.log('\n=== CHECKING FOR CANCELLATION/REINSTATEMENT PAIRS ===');
+            for (let i = 0; i < records.length; i++) {
+                const rec1 = records[i];
+                
+                // Look for cancellations
+                if (rec1.reason.includes('cancel')) {
+                    // Look for matching reinstatement with same policy number and opposite amount
+                    for (let j = 0; j < records.length; j++) {
+                        if (i === j) continue;
+                        
+                        const rec2 = records[j];
+                        
+                        // Check if it's a reinstatement for the same policy with matching amount
+                        if (rec2.reason.includes('reinstate') &&
+                            rec1.policyNumber && 
+                            rec2.policyNumber &&
+                            rec1.policyNumber === rec2.policyNumber &&
+                            Math.abs(rec1.amount) === Math.abs(rec2.amount)) {
+                            
+                            console.log(`✓ FOUND CANCEL/REINSTATE PAIR: ${rec1.name} | Policy: ${rec1.policyNumber} | Amount: $${Math.abs(rec1.amount)} (WASH)`);
+                            
+                            // Mark both as paired (they wash out)
+                            cancelReinstatePairs.add(i);
+                            cancelReinstatePairs.add(j);
+                        }
+                    }
+                }
+            }
+
             // Get date from 12 months ago for rolling window
             const twelveMonthsAgo = new Date();
             twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
@@ -844,10 +887,21 @@
                 renewalDetected: 0,
                 cancellationDetected: 0,
                 endorsementDetected: 0,
-                uncategorized: 0
+                uncategorized: 0,
+                cancelReinstateWash: cancelReinstatePairs.size / 2
             };
 
-            for (const record of records) {
+            console.log(`\n=== FOUND ${debugCounts.cancelReinstateWash} CANCEL/REINSTATE PAIRS TO EXCLUDE ===\n`);
+
+            for (let idx = 0; idx < records.length; idx++) {
+                const record = records[idx];
+                
+                // STEP 2: Skip if this is part of a cancel/reinstate pair
+                if (cancelReinstatePairs.has(idx)) {
+                    console.log(`SKIPPING (Cancel/Reinstate Wash): ${record.name} | ${record.reason}`);
+                    continue;
+                }
+                
                 const reason = record.reason.toLowerCase();
                 
                 // Determine transaction type from reason text
@@ -1296,7 +1350,8 @@
 
             producerList.innerHTML = Object.entries(producerTotals)
                 .map(([producer, totals]) => {
-                    const netAmount = totals.newAmount - totals.rewriteAmount + totals.endorsementAmount - totals.chargebackAmount;
+                    // Rewrites are $0 - they don't subtract from commission
+                    const netAmount = totals.newAmount + totals.endorsementAmount - totals.chargebackAmount;
                     grandTotal += netAmount;
                     totalNewAmount += totals.newAmount;
                     totalRewriteAmount += totals.rewriteAmount;
@@ -1306,7 +1361,7 @@
 
                     let calcText = `$${totals.newAmount.toFixed(2)} new (${totals.newCount})`;
                     if (totals.rewriteCount > 0) {
-                        calcText += ` - $${totals.rewriteAmount.toFixed(2)} re-writes (${totals.rewriteCount})`;
+                        calcText += ` | ${totals.rewriteCount} re-write${totals.rewriteCount > 1 ? 's' : ''} ($0)`;
                     }
                     if (totals.endorsementCount > 0) {
                         calcText += ` + $${totals.endorsementAmount.toFixed(2)} endorsements (${totals.endorsementCount})`;
@@ -1330,12 +1385,13 @@
             // Update grand total with dollar amount
             document.getElementById('grandTotal').textContent = `$${grandTotal.toFixed(2)}`;
             
-            // Update breakdown
+            // Update breakdown - rewrites are shown but don't affect total
             let breakdownParts = [
                 `${totalPolicies} policies: $${totalNewAmount.toFixed(2)}`
             ];
             if (totalRewriteAmount > 0) {
-                breakdownParts.push(`re-writes: -$${totalRewriteAmount.toFixed(2)}`);
+                const rewriteCount = rewrites.length;
+                breakdownParts.push(`${rewriteCount} re-write${rewriteCount > 1 ? 's' : ''} ($0)`);
             }
             if (totalEndorsementAmount > 0) {
                 breakdownParts.push(`endorsements: +$${totalEndorsementAmount.toFixed(2)}`);
@@ -1388,12 +1444,12 @@
                 }
             });
 
-            // Calculate net for each producer
+            // Calculate net for each producer - rewrites are $0, don't subtract
             Object.values(producerTotals).forEach(p => {
-                p['Net Commission $'] = p['New Business $'] - p['Re-Writes $'] + p['Endorsements $'] - p['Chargebacks $'];
+                p['Net Commission $'] = p['New Business $'] + p['Endorsements $'] - p['Chargebacks $'];
                 // Round to 2 decimals
                 p['New Business $'] = Math.round(p['New Business $'] * 100) / 100;
-                p['Re-Writes $'] = Math.round(p['Re-Writes $'] * 100) / 100;
+                p['Re-Writes $'] = 0; // Rewrites are always $0
                 p['Endorsements $'] = Math.round(p['Endorsements $'] * 100) / 100;
                 p['Chargebacks $'] = Math.round(p['Chargebacks $'] * 100) / 100;
                 p['Net Commission $'] = Math.round(p['Net Commission $'] * 100) / 100;
@@ -1421,8 +1477,8 @@
                         'Customer': item.name,
                         'Producer': item.producer,
                         'Date': item.date,
-                        'Commission $': Math.round(item.amount * 100) / 100,
-                        'Type': 'Re-Write (Deduct)'
+                        'Commission $': 0,
+                        'Type': 'Re-Write (Informational - $0 Commission)'
                     }))
                 );
                 XLSX.utils.book_append_sheet(wb, rwSheet, 'Re-Writes');
