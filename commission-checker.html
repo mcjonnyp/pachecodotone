@@ -1014,7 +1014,19 @@
                         const companiesMatch = !record.company || !match.company || 
                             normalizeCompanyName(record.company) === normalizeCompanyName(match.company);
                         
-                        if (isRecent && companiesMatch) {
+                        // Check if it's a re-write in the tracker
+                        const isRewrite = match.referralSource && 
+                            match.referralSource.toLowerCase().includes('re-write');
+                        
+                        if (isRewrite) {
+                            console.log(`CANCELLATION on RE-WRITE policy ($0 - IGNORE): ${record.name} | Policy date: ${match.date} | Referral: ${match.referralSource}`);
+                            ignoredTransactions.push({
+                                name: record.name,
+                                type: 'Cancellation',
+                                reason: 'Re-write policy (no commission impact)',
+                                amount: Math.abs(record.amount)
+                            });
+                        } else if (isRecent && companiesMatch) {
                             console.log(`CANCELLATION (within 12 months, company match): ${record.name} | Policy date: ${match.date} | Producer: ${match.producer} | Chargeback: $${Math.abs(record.amount)}`);
                             cancellations.push({
                                 name: record.name,
@@ -1063,7 +1075,19 @@
                         const companiesMatch = !record.company || !match.company || 
                             normalizeCompanyName(record.company) === normalizeCompanyName(match.company);
                         
-                        if (isRecent && companiesMatch) {
+                        // Check if it's a re-write in the tracker
+                        const isRewrite = match.referralSource && 
+                            match.referralSource.toLowerCase().includes('re-write');
+                        
+                        if (isRewrite) {
+                            console.log(`ENDORSEMENT on RE-WRITE policy ($0 - IGNORE): ${record.name} | Policy date: ${match.date} | Referral: ${match.referralSource} | Amount: $${record.amount}`);
+                            ignoredTransactions.push({
+                                name: record.name,
+                                type: record.amount > 0 ? 'Endorsement' : 'Negative Endorsement',
+                                reason: 'Re-write policy (no commission impact)',
+                                amount: Math.abs(record.amount)
+                            });
+                        } else if (isRecent && companiesMatch) {
                             if (record.amount > 0) {
                                 console.log(`ENDORSEMENT (within 12 months, company match): ${record.name} | Policy date: ${match.date} | Producer: ${match.producer} | Commission: $${record.amount}`);
                                 endorsements.push({
