@@ -219,7 +219,8 @@
         }
 
         .about-section h2,
-        .contact-section h2 {
+        .contact-section h2,
+        .portfolio-section h2 {
             font-size: 36px;
             margin-bottom: 30px;
             color: #1f2937;
@@ -256,6 +257,117 @@
             border-color: #2563eb;
             transform: translateY(-2px);
             box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Portfolio Section */
+        .portfolio-section {
+            background: white;
+            padding: 80px 20px;
+        }
+
+        .portfolio-section .container {
+            max-width: 1100px;
+        }
+
+        .portfolio-intro {
+            text-align: center;
+            font-size: 18px;
+            color: #6b7280;
+            margin-bottom: 50px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .portfolio-item {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 30px;
+            transition: all 0.3s;
+        }
+
+        .portfolio-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            border-color: #2563eb;
+        }
+
+        .portfolio-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .portfolio-item h3 {
+            font-size: 22px;
+            color: #1f2937;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .portfolio-description {
+            color: #6b7280;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .portfolio-features {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .portfolio-features li {
+            color: #4b5563;
+            font-size: 14px;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .portfolio-features li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .portfolio-impact {
+            margin-top: 15px;
+        }
+
+        .impact-badge {
+            background: #eff6ff;
+            color: #2563eb;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .portfolio-cta {
+            text-align: center;
+            margin-top: 40px;
+            padding: 30px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .portfolio-cta p {
+            color: #4b5563;
+            font-size: 18px;
+            line-height: 1.8;
+            max-width: 700px;
+            margin: 0 auto;
         }
 
         /* Contact Section */
@@ -335,8 +447,17 @@
             }
 
             .about-section h2,
-            .contact-section h2 {
+            .contact-section h2,
+            .portfolio-section h2 {
                 font-size: 28px;
+            }
+
+            .portfolio-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .portfolio-item {
+                padding: 25px;
             }
         }
     </style>
@@ -370,6 +491,7 @@
                     </div>
                 </li>
                 <li><a href="#about">About</a></li>
+                <li><a href="#portfolio">Portfolio</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>
         </div>
@@ -398,6 +520,116 @@
                     <span class="skill-tag">JavaScript</span>
                     <span class="skill-tag">Business Intelligence</span>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio Section -->
+    <section id="portfolio" class="portfolio-section">
+        <div class="container">
+            <h2>Solutions</h2>
+            <p class="portfolio-intro">Custom automation tools built to solve real insurance agency challenges</p>
+            
+            <div class="portfolio-grid">
+                <!-- Business Tracker -->
+                <div class="portfolio-item">
+                    <div class="portfolio-icon">📊</div>
+                    <h3>Business Tracker</h3>
+                    <p class="portfolio-description">Automated policy recording and production tracking system with real-time Slack notifications</p>
+                    <ul class="portfolio-features">
+                        <li>Eliminates manual data entry</li>
+                        <li>Daily production summaries</li>
+                        <li>Cross-sell opportunity alerts</li>
+                        <li>Monthly goal tracking</li>
+                    </ul>
+                    <div class="portfolio-impact">
+                        <span class="impact-badge">Saves 2+ hours daily</span>
+                    </div>
+                </div>
+
+                <!-- Quote Tracker -->
+                <div class="portfolio-item">
+                    <div class="portfolio-icon">💼</div>
+                    <h3>Quote Tracker</h3>
+                    <p class="portfolio-description">Prospect management system with automated follow-up reminders and seamless conversion to policies</p>
+                    <ul class="portfolio-features">
+                        <li>Automated follow-up scheduling</li>
+                        <li>One-click quote to policy conversion</li>
+                        <li>Team collaboration features</li>
+                        <li>Producer performance tracking</li>
+                    </ul>
+                    <div class="portfolio-impact">
+                        <span class="impact-badge">Zero missed follow-ups</span>
+                    </div>
+                </div>
+
+                <!-- Commission Checker -->
+                <div class="portfolio-item">
+                    <div class="portfolio-icon">💰</div>
+                    <h3>Commission Checker</h3>
+                    <p class="portfolio-description">Intelligent commission validation tool that catches errors and handles complex scenarios automatically</p>
+                    <ul class="portfolio-features">
+                        <li>Statement reconciliation</li>
+                        <li>Error detection & alerts</li>
+                        <li>Handles cancellation/reinstatement pairs</li>
+                        <li>Re-write policy logic</li>
+                    </ul>
+                    <div class="portfolio-impact">
+                        <span class="impact-badge">100% accuracy</span>
+                    </div>
+                </div>
+
+                <!-- Guidelines Manager -->
+                <div class="portfolio-item">
+                    <div class="portfolio-icon">📋</div>
+                    <h3>Guidelines Manager</h3>
+                    <p class="portfolio-description">Centralized underwriting guidelines database with instant search across all carriers</p>
+                    <ul class="portfolio-features">
+                        <li>Quick guideline lookups</li>
+                        <li>Carrier-specific rules</li>
+                        <li>No more PDF hunting</li>
+                        <li>Always up-to-date</li>
+                    </ul>
+                    <div class="portfolio-impact">
+                        <span class="impact-badge">Instant answers</span>
+                    </div>
+                </div>
+
+                <!-- Client Tools Suite -->
+                <div class="portfolio-item">
+                    <div class="portfolio-icon">🧮</div>
+                    <h3>Client-Facing Tools</h3>
+                    <p class="portfolio-description">Interactive calculators and assessment tools for client presentations and quotes</p>
+                    <ul class="portfolio-features">
+                        <li>Deductible savings calculator</li>
+                        <li>Florida asset protection calculator</li>
+                        <li>Property insurance assessments</li>
+                        <li>ACORD form auto-filler</li>
+                    </ul>
+                    <div class="portfolio-impact">
+                        <span class="impact-badge">Professional edge</span>
+                    </div>
+                </div>
+
+                <!-- Slack Integration -->
+                <div class="portfolio-item">
+                    <div class="portfolio-icon">💬</div>
+                    <h3>Slack Automation</h3>
+                    <p class="portfolio-description">Automated team notifications and reporting through Slack integration</p>
+                    <ul class="portfolio-features">
+                        <li>Daily production reports</li>
+                        <li>Weekly performance summaries</li>
+                        <li>Cross-sell reminders</li>
+                        <li>Quote follow-up alerts</li>
+                    </ul>
+                    <div class="portfolio-impact">
+                        <span class="impact-badge">Team alignment</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="portfolio-cta">
+                <p>These tools work together as an integrated system, eliminating manual processes and improving accuracy across the entire agency workflow.</p>
             </div>
         </div>
     </section>
