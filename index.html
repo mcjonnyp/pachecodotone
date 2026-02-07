@@ -13,19 +13,21 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
             line-height: 1.6;
-            color: #333;
+            color: #00ff00;
+            background: #0a0a0a;
         }
 
         /* Navigation */
         nav {
-            background: white;
-            border-bottom: 1px solid #e5e7eb;
+            background: #1a1a1a;
+            border-bottom: 2px solid #00ff00;
             padding: 20px 0;
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 255, 0, 0.1);
         }
 
         .nav-container {
@@ -40,8 +42,14 @@
         .logo {
             font-size: 24px;
             font-weight: 700;
-            color: #2563eb;
+            color: #00ff00;
             text-decoration: none;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .logo:before {
+            content: '> ';
+            color: #00ff00;
         }
 
         .nav-links {
@@ -52,14 +60,23 @@
         }
 
         .nav-links a {
-            color: #333;
+            color: #00ff00;
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.3s;
+            transition: all 0.3s;
+            position: relative;
         }
 
         .nav-links a:hover {
-            color: #2563eb;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+        }
+
+        .nav-links a:before {
+            content: '[ ';
+        }
+
+        .nav-links a:after {
+            content: ' ]';
         }
 
         /* Dropdown */
@@ -72,17 +89,26 @@
             display: flex;
             align-items: center;
             gap: 5px;
+            color: #00ff00;
+        }
+
+        .dropdown-toggle:before {
+            content: '[ ';
+        }
+
+        .dropdown-toggle:after {
+            content: ' ]';
         }
 
         .dropdown-menu {
             position: absolute;
             top: 100%;
             right: 0;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            min-width: 220px;
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            border-radius: 0;
+            box-shadow: 0 4px 20px rgba(0, 255, 0, 0.3);
+            min-width: 280px;
             opacity: 0;
             visibility: hidden;
             transform: translateY(-10px);
@@ -106,22 +132,25 @@
         .dropdown-menu a {
             display: block;
             padding: 12px 20px;
-            color: #333;
+            color: #00ff00;
             text-decoration: none;
-            transition: background 0.2s;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+        }
+
+        .dropdown-menu a:before {
+            content: '$ ';
+            color: #00ff00;
         }
 
         .dropdown-menu a:hover {
-            background: #f3f4f6;
-            color: #2563eb;
-        }
-
-        .dropdown-menu a:first-child {
-            border-radius: 8px 8px 0 0;
+            background: rgba(0, 255, 0, 0.1);
+            padding-left: 30px;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
         }
 
         .dropdown-menu a:last-child {
-            border-radius: 0 0 8px 8px;
+            border-bottom: none;
         }
 
         .dropdown-arrow {
@@ -135,43 +164,98 @@
 
         /* Hero Section */
         .hero {
-            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
-            color: white;
+            background: #0a0a0a;
+            color: #00ff00;
             padding: 120px 20px 80px;
             text-align: center;
             min-height: 70vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 255, 0, 0.03) 0px,
+                    transparent 1px,
+                    transparent 2px,
+                    rgba(0, 255, 0, 0.03) 3px
+                );
+            pointer-events: none;
+            animation: scanlines 8s linear infinite;
+        }
+
+        @keyframes scanlines {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(20px); }
         }
 
         .hero-content {
             max-width: 800px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
 
         .hero h1 {
             font-size: 64px;
             margin-bottom: 20px;
             font-weight: 700;
+            text-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            animation: flicker 3s infinite alternate;
+        }
+
+        .hero h1:before {
+            content: '> ';
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.95; }
         }
 
         .hero p {
             font-size: 24px;
-            opacity: 0.95;
+            opacity: 0.9;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        .hero p:before {
+            content: '# ';
         }
 
         /* Footer */
         footer {
-            background: #1e293b;
-            color: white;
+            background: #1a1a1a;
+            color: #00ff00;
             padding: 40px 20px;
             text-align: center;
+            border-top: 2px solid #00ff00;
         }
 
         footer p {
             opacity: 0.8;
             margin-bottom: 10px;
+        }
+
+        footer a {
+            color: #00ff00;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        footer a:hover {
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
         }
 
         /* Responsive */
@@ -212,6 +296,7 @@
                         <a href="login.html?redirect=quote-tracker.html">Quote Tracker</a>
                         <a href="login.html?redirect=business-tracker-app.html">Business Tracker</a>
                         <a href="login.html?redirect=commission-checker.html">Commission Checker</a>
+                        <a href="login.html?redirect=guidelines-manager.html">Guidelines Manager</a>
                     </div>
                 </li>
             </ul>
@@ -228,13 +313,13 @@
 
     <!-- Footer -->
     <footer>
-        <p><a href="mailto:jon@pacheco.one">jon@pacheco.one</a></p>
+        <p><a href="/cdn-cgi/l/email-protection#c1abaeaf81b1a0a2a9a4a2aeefaeafa4"><span class="__cf_email__" data-cfemail="b7ddd8d9f7c7d6d4dfd2d4d899d8d9d2">[email&#160;protected]</span></a></p>
         <p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">
             © 2025
         </p>
     </footer>
     
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // Handle dropdown for mobile
         document.addEventListener('DOMContentLoaded', function() {
             const dropdown = document.querySelector('.dropdown');
@@ -256,12 +341,3 @@
             
             // Close dropdown when clicking a link
             const dropdownLinks = dropdownMenu.querySelectorAll('a');
-            dropdownLinks.forEach(link => {
-                link.addEventListener('click', function() {
-                    dropdownMenu.classList.remove('active');
-                });
-            });
-        });
-    </script>
-</body>
-</html>
