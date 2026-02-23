@@ -356,7 +356,7 @@
 <body>
 
 <header>
-  <div class="logo-mark"><a href="index.html">P</a></div>
+  <div class="logo-mark">P</div>
   <h1>ACORD Application Wizard</h1>
   <span>Commercial Lines · 125 · 126 · 140</span>
 </header>
@@ -860,9 +860,9 @@
           </div>
           <div class="field">
             <label>Per</label>
-            <div class="radio-group" style="margin-top:6px">
-              <label class="radio-item"><input type="radio" name="gl_ded_per" value="claim"> Claim</label>
-              <label class="radio-item"><input type="radio" name="gl_ded_per" value="occ"> Occurrence</label>
+            <div class="check-group" style="margin-top:6px">
+              <label class="check-item"><input type="checkbox" id="gl_ded_per_claim"> Claim</label>
+              <label class="check-item"><input type="checkbox" id="gl_ded_per_occ"> Occurrence</label>
             </div>
           </div>
         </div>
@@ -893,6 +893,43 @@
         <div class="field">
           <textarea id="gl_other_coverages" placeholder="List any additional coverages, restrictions, or endorsements..."></textarea>
         </div>
+
+        <hr class="divider">
+        <div class="sub-heading">GL Remarks</div>
+        <div class="field">
+          <textarea id="gl_remarks" placeholder="Additional GL information or remarks..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>Schedule of Hazards</h3>
+        <span class="badge">ACORD 126 — Page 1</span>
+      </div>
+      <div class="card-body">
+        <p style="margin-bottom:12px; font-size:0.85rem; color:var(--ink-soft);">Up to 8 classification rows. Fill only what applies.</p>
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+            <thead>
+              <tr style="background:var(--cream-dark);">
+                <th style="padding:6px 4px; text-align:left; border-bottom:1px solid var(--border);">Loc#</th>
+                <th style="padding:6px 4px; text-align:left; border-bottom:1px solid var(--border);">Haz#</th>
+                <th style="padding:6px 4px; text-align:left; border-bottom:1px solid var(--border); min-width:160px;">Classification</th>
+                <th style="padding:6px 4px; text-align:left; border-bottom:1px solid var(--border);">Class Code</th>
+                <th style="padding:6px 4px; text-align:left; border-bottom:1px solid var(--border);">Basis</th>
+                <th style="padding:6px 4px; text-align:left; border-bottom:1px solid var(--border);">Exposure</th>
+                <th style="padding:6px 4px; text-align:left; border-bottom:1px solid var(--border);">Terr</th>
+                <th style="padding:6px 4px; text-align:left; border-bottom:1px solid var(--border);">P/O Rate</th>
+                <th style="padding:6px 4px; text-align:left; border-bottom:1px solid var(--border);">Prod Rate</th>
+                <th style="padding:6px 4px; text-align:left; border-bottom:1px solid var(--border);">P/O Prem</th>
+                <th style="padding:6px 4px; text-align:left; border-bottom:1px solid var(--border);">Prod Prem</th>
+              </tr>
+            </thead>
+            <tbody id="hazard-rows">
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -910,14 +947,6 @@
           <div class="field">
             <label>Entry Date into Uninterrupted Claims Made Coverage</label>
             <input type="date" id="gl_entry_date">
-          </div>
-          <div class="field span-2">
-            <label>Has any product, work, accident, or location been excluded, uninsured or self-insured from any previous coverage? (Y/N + explain)</label>
-            <input type="text" id="gl_excluded_prior">
-          </div>
-          <div class="field span-2">
-            <label>Was tail coverage purchased under any previous policy? (Y/N)</label>
-            <input type="text" id="gl_tail_prior">
           </div>
         </div>
       </div>
@@ -1269,6 +1298,10 @@
         <p style="margin-bottom:16px; color:var(--ink-soft); font-size:14px;">
           Your PDFs are generated locally in your browser — nothing is transmitted. Each button generates and downloads one form. Make sure your three PDF templates are in the same folder as this file.
         </p>
+        <div class="note">
+          <strong>Template files expected:</strong> <code>Acord125CommInsApp-4.pdf</code>, <code>Acord126_GL.pdf</code>, <code>Acord-140.pdf</code><br>
+          These must be in the same folder as <code>index.html</code>.
+        </div>
 
         <div class="generate-grid">
           <div class="pdf-card">
@@ -1322,7 +1355,35 @@ document.addEventListener('DOMContentLoaded', () => {
   // Default today's date
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('form_date').value = today;
+  // Build Schedule of Hazards rows
+  buildHazardRows();
 });
+
+function buildHazardRows() {
+  const tbody = document.getElementById('hazard-rows');
+  if (!tbody) return;
+  const cols = [
+    ['loc','3%'],['haz','3%'],['class','20%'],['code','7%'],
+    ['basis','6%'],['exp','10%'],['terr','5%'],
+    ['rate_po','8%'],['rate_prod','8%'],['prem_po','10%'],['prem_prod','10%']
+  ];
+  for (let i = 1; i <= 8; i++) {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    cols.forEach(([key, w]) => {
+      const td = document.createElement('td');
+      td.style.padding = '3px 3px';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.id = `haz${i}_${key}`;
+      inp.style.cssText = `width:100%; border:1px solid var(--border); border-radius:4px; padding:4px 6px; font-size:0.8rem; background:var(--white);`;
+      td.style.width = w;
+      td.appendChild(inp);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  }
+}
 
 // ─────────────────────────────────────────
 // NAVIGATION
@@ -1599,8 +1660,7 @@ async function fill125() {
 
 // ─────────────────────────────────────────
 // GENERATE ACORD 126
-// Fields are generic Text1..N, Check1..N
-// Mapped by position from form layout
+// Field mapping verified against PDF tooltips
 // ─────────────────────────────────────────
 async function fill126() {
   const bytes = await loadTemplate('Acord126_GL.pdf');
@@ -1610,84 +1670,114 @@ async function fill126() {
   const tx = (page, n, value) => {
     try { form.getTextField(`F[0].P${page}[0].Text${n}[0]`).setText(value || ''); } catch(e) {}
   };
-  const ck = (page, n, checked) => {
+  const ck = (page, n, chk) => {
     try {
       const f = form.getField(`F[0].P${page}[0].Check${n}[0]`);
-      if (checked) f.check(); else f.uncheck();
+      if (chk) f.check(); else f.uncheck();
     } catch(e) {}
   };
 
-  // Page 1 header (Text1-8)
-  tx(1, 1, val('agency_name'));           // Agency
-  tx(1, 2, val('carrier_name'));           // Carrier
-  tx(1, 3, val('carrier_naic'));           // NAIC
-  tx(1, 4, val('policy_number'));          // Policy Number
-  tx(1, 5, fmtDate(val('eff_date')));     // Effective Date
-  tx(1, 6, val('ni_name'));               // Named Insured
-  tx(1, 7, val('customer_id'));           // Agency Customer ID
-  tx(1, 8, fmtDate(val('form_date')));    // Date
+  // ── Page 1 Header ──
+  // Text1=CustomerID, Text2=Date, Text3=Agency, Text4=PolicyNum,
+  // Text5=EffDate, Text6=Carrier, Text7=NAIC, Text8=NamedInsured
+  tx(1, 1, val('customer_id'));
+  tx(1, 2, fmtDate(val('form_date')));
+  tx(1, 3, val('agency_name'));
+  tx(1, 4, val('policy_number'));
+  tx(1, 5, fmtDate(val('eff_date')));
+  tx(1, 6, val('carrier_name'));
+  tx(1, 7, val('carrier_naic'));
+  tx(1, 8, val('ni_name'));
 
-  // Coverages checkboxes
-  ck(1, 1, checked('gl_cgl'));            // CGL
-  ck(1, 2, checked('gl_claims_made'));    // Claims Made
-  ck(1, 3, checked('gl_occurrence'));     // Occurrence
-  ck(1, 4, checked('gl_ocp'));            // OCP
-  ck(1, 5, checked('gl_per_policy'));     // Limit per Policy
-  ck(1, 6, checked('gl_per_project'));    // Limit per Project
-  ck(1, 7, checked('gl_per_location'));   // Limit per Location
+  // ── Coverage Type Checkboxes ──
+  // Check1=CGL/occurrence option, Check2=Claims Made, Check3=Occurrence, Check4=OCP, Check5=Other
+  ck(1, 1, checked('gl_cgl'));
+  ck(1, 2, checked('gl_claims_made'));
+  ck(1, 3, checked('gl_occurrence'));
+  ck(1, 4, checked('gl_ocp'));
 
-  // Limits (Text9-14)
-  tx(1, 9,  val('gl_general_agg'));       // General Aggregate
-  tx(1, 10, val('gl_prod_agg'));          // Products Agg
-  tx(1, 11, val('gl_personal_inj'));      // Personal & Adv Injury
-  tx(1, 12, val('gl_each_occ'));          // Each Occurrence
-  tx(1, 13, val('gl_rented_prem'));       // Damage to Rented Premises
-  tx(1, 14, val('gl_med_exp'));           // Medical Expense
+  // ── Deductibles ──
+  // Check6=PD ded, Text10=PD amount, Check7=BI ded, Text11=BI amount
+  // Check8=Other ded, Text12=other type, Text13=other amount
+  // Check9=Per Claim, Check10=Per Occurrence
+  ck(1, 6, !!val('gl_ded_pd'));
+  tx(1, 10, val('gl_ded_pd'));
+  ck(1, 7, !!val('gl_ded_bi'));
+  tx(1, 11, val('gl_ded_bi'));
+  ck(1, 9, checked('gl_ded_per_claim'));
+  ck(1, 10, checked('gl_ded_per_occ'));
 
-  // Premiums (Text15-18)
-  tx(1, 15, val('gl_prem_premops'));      // Prem/Ops premium
-  tx(1, 16, val('gl_prem_prod'));         // Products premium
-  tx(1, 17, val('gl_prem_other'));        // Other premium
-  tx(1, 18, val('gl_prem_total'));        // Total
+  // ── Limits ──
+  // Text14=General Agg, Check11=Per Policy, Check12=Per Project, Check13=Per Location
+  // Text16=Products Agg, Text17=Personal & Adv Injury, Text18=Each Occurrence
+  // Text19=Rented Premises, Text20=Medical Expense, Text21=Employee Benefits
+  tx(1, 14, val('gl_general_agg'));
+  ck(1, 11, checked('gl_per_policy'));
+  ck(1, 12, checked('gl_per_project'));
+  ck(1, 13, checked('gl_per_location'));
+  tx(1, 16, val('gl_prod_agg'));
+  tx(1, 17, val('gl_personal_inj'));
+  tx(1, 18, val('gl_each_occ'));
+  tx(1, 19, val('gl_rented_prem'));
+  tx(1, 20, val('gl_med_exp'));
+  tx(1, 21, val('gl_emp_benefits'));
 
-  // Deductibles (Text19-21)
-  tx(1, 19, val('gl_ded_pd'));            // PD deductible
-  tx(1, 20, val('gl_ded_bi'));            // BI deductible
-  // Claims made info (Text22-25)
-  tx(1, 22, fmtDate(val('gl_retro_date')));
-  tx(1, 23, fmtDate(val('gl_entry_date')));
+  // ── Other Coverages ── Text22=description, Text23=limit
+  tx(1, 22, val('gl_other_coverages'));
 
-  // Other coverages text
-  tx(1, 24, val('gl_other_coverages'));
+  // ── Premiums ── Text24=Prem/Ops, Text25=Products, Text26=Other, Text27=Total
+  tx(1, 24, val('gl_prem_premops'));
+  tx(1, 25, val('gl_prem_prod'));
+  tx(1, 26, val('gl_prem_other'));
+  tx(1, 27, val('gl_prem_total'));
 
-  // Employee Benefits (bottom of page 1)
-  tx(1, 130, val('ebl_ded'));
-  tx(1, 131, val('ebl_emp_count'));
-  tx(1, 132, val('ebl_covered_count'));
-  tx(1, 133, fmtDate(val('ebl_retro')));
+  // ── Remarks ── Text28
+  tx(1, 28, val('gl_remarks'));
 
-  // Page 2 header
+  // ── Schedule of Hazards (8 rows, Text29-127, 11 fields per row) ──
+  // Per row: Text[base+0]=Loc, [+1]=Haz, [+2]=Classification, [+3]=ClassCode,
+  //          [+4]=RatingBasis, [+5]=Exposure, [+6]=Terr, [+7]=PremOpsRate,
+  //          [+8]=ProductsRate, [+9]=PremOpsPremium, [+10]=ProductsPremium
+  const schedRows = [
+    'haz1_loc','haz1_haz','haz1_class','haz1_code','haz1_basis','haz1_exp','haz1_terr','haz1_rate_po','haz1_rate_prod','haz1_prem_po','haz1_prem_prod',
+    'haz2_loc','haz2_haz','haz2_class','haz2_code','haz2_basis','haz2_exp','haz2_terr','haz2_rate_po','haz2_rate_prod','haz2_prem_po','haz2_prem_prod',
+    'haz3_loc','haz3_haz','haz3_class','haz3_code','haz3_basis','haz3_exp','haz3_terr','haz3_rate_po','haz3_rate_prod','haz3_prem_po','haz3_prem_prod',
+    'haz4_loc','haz4_haz','haz4_class','haz4_code','haz4_basis','haz4_exp','haz4_terr','haz4_rate_po','haz4_rate_prod','haz4_prem_po','haz4_prem_prod',
+    'haz5_loc','haz5_haz','haz5_class','haz5_code','haz5_basis','haz5_exp','haz5_terr','haz5_rate_po','haz5_rate_prod','haz5_prem_po','haz5_prem_prod',
+    'haz6_loc','haz6_haz','haz6_class','haz6_code','haz6_basis','haz6_exp','haz6_terr','haz6_rate_po','haz6_rate_prod','haz6_prem_po','haz6_prem_prod',
+    'haz7_loc','haz7_haz','haz7_class','haz7_code','haz7_basis','haz7_exp','haz7_terr','haz7_rate_po','haz7_rate_prod','haz7_prem_po','haz7_prem_prod',
+    'haz8_loc','haz8_haz','haz8_class','haz8_code','haz8_basis','haz8_exp','haz8_terr','haz8_rate_po','haz8_rate_prod','haz8_prem_po','haz8_prem_prod',
+  ];
+  schedRows.forEach((id, i) => tx(1, 29 + i, val(id)));
+
+  // ── Claims Made (bottom of page 1) ──
+  // Text128=Proposed Retro, Text129=Entry Date, Text130=Q3 Y/N, Text131=Q3 explain,
+  // Text132=Q4 Y/N, Text133=Q4 explain
+  tx(1, 128, fmtDate(val('gl_retro_date')));
+  tx(1, 129, fmtDate(val('gl_entry_date')));
+
+  // ── Employee Benefits Liability ──
+  // Text134=Ded per claim, Text135=# employees, Text136=# covered, Text137=retro date
+  tx(1, 134, val('ebl_ded'));
+  tx(1, 135, val('ebl_emp_count'));
+  tx(1, 136, val('ebl_covered_count'));
+  tx(1, 137, fmtDate(val('ebl_retro')));
+
+  // ── Page 2,3,4 Customer ID ──
   tx(2, 1, val('customer_id'));
-
-  // Page 3 header
   tx(3, 1, val('customer_id'));
-
-  // Page 4 header
   tx(4, 1, val('customer_id'));
 
-  // ── Underwriting Y/N questions (38 total across pages 2-4) ──
+  // ── Underwriting Y/N questions ──
   if (checked('gl_all_no')) {
-    const yn = [
-      [1,130],[1,132],                                           // Page 1
-      [2,2],[2,4],[2,6],[2,8],[2,10],[2,12],                    // Page 2 contractor
-      [2,40],[2,42],[2,43],[2,45],[2,47],[2,49],                // Page 2 products
-      [2,51],[2,53],[2,55],[2,57],                              // Page 2 products cont
-      [3,18],[3,20],[3,22],[3,24],[3,26],[3,28],                // Page 3
-      [3,30],[3,32],[3,34],[3,36],[3,38],[3,40],                // Page 3 cont
-      [3,42],[3,44],[3,46],                                      // Page 3 cont
-      [4,2],[4,4],[4,6],[4,8],[4,10],                           // Page 4
-    ];
-    yn.forEach(([p, n]) => tx(p, n, 'N'));
+    // Page 1 claims made questions
+    tx(1, 130, 'N'); tx(1, 132, 'N');
+    // Page 2: Contractors (Text2,4,6,8,10,12), Products (Text40,42,43,45,47,49,51,53,55,57)
+    [2,4,6,8,10,12,40,42,43,45,47,49,51,53,55,57].forEach(n => tx(2, n, 'N'));
+    // Page 3: General Info (Text18,20,22,24,26,28,30,32,34,36,38,40,42,44,46)
+    [18,20,22,24,26,28,30,32,34,36,38,40,42,44,46].forEach(n => tx(3, n, 'N'));
+    // Page 4: General Info continued (Text2,4,6,8,10)
+    [2,4,6,8,10].forEach(n => tx(4, n, 'N'));
   }
 
   form.flatten();
