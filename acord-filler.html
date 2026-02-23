@@ -1385,7 +1385,7 @@ function fmtDate(dateStr) {
 // ─────────────────────────────────────────
 async function fill125() {
   const bytes = await loadTemplate('Acord125CommInsApp-4.pdf');
-  const pdf = await PDFLib.PDFDocument.load(bytes);
+  const pdf = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
   const form = pdf.getForm();
 
   const set = (fieldName, value) => {
@@ -1537,7 +1537,7 @@ async function fill125() {
 // ─────────────────────────────────────────
 async function fill126() {
   const bytes = await loadTemplate('Acord126_GL.pdf');
-  const pdf = await PDFLib.PDFDocument.load(bytes);
+  const pdf = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
   const form = pdf.getForm();
 
   const tx = (page, n, value) => {
@@ -1617,7 +1617,7 @@ async function fill126() {
 // ─────────────────────────────────────────
 async function fill140() {
   const bytes = await loadTemplate('Acord-140.pdf');
-  const pdf = await PDFLib.PDFDocument.load(bytes);
+  const pdf = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
   const form = pdf.getForm();
 
   const set = (fieldName, value) => {
