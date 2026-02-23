@@ -356,7 +356,7 @@
 <body>
 
 <header>
-  <div class="logo-mark">P</div>
+  <div class="logo-mark"><a href="index.html">P</a></div>
   <h1>ACORD Application Wizard</h1>
   <span>Commercial Lines · 125 · 126 · 140</span>
 </header>
@@ -766,6 +766,21 @@
       </div>
     </div>
 
+    <div class="card" style="border: 2px solid var(--gold); background: #fffdf5;">
+      <div class="card-header" style="background: #fdf6e3;">
+        <h3>⚡ Underwriting Questions</h3>
+        <span class="badge" style="background: var(--gold); color: var(--ink);">ACORD 125 — Pages 2–3</span>
+      </div>
+      <div class="card-body">
+        <p style="margin-bottom: 16px; color: var(--ink-soft);">ACORD 125 contains yes/no underwriting questions on pages 2–3 covering topics like leased areas, subsidiaries, safety programs, prior cancellations, losses, and more.</p>
+        <label class="check-item" style="font-size: 1rem; font-weight: 600; gap: 12px;">
+          <input type="checkbox" id="app_all_no" checked style="width: 18px; height: 18px;">
+          Answer all underwriting questions <strong style="color: var(--success);">NO</strong>
+        </label>
+        <p style="margin-top: 8px; font-size: 0.82rem; color: var(--ink-soft);">Also checks "No Prior Losses" on page 4. Uncheck for accounts with claims history or other yes answers.</p>
+      </div>
+    </div>
+
     <div class="wizard-nav">
       <button class="btn btn-secondary" onclick="prevStep(2)">← Back</button>
       <button class="btn btn-primary" onclick="nextStep(2)">Next: GL Section →</button>
@@ -931,6 +946,21 @@
             <input type="date" id="ebl_retro">
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="card" style="border: 2px solid var(--gold); background: #fffdf5;">
+      <div class="card-header" style="background: #fdf6e3;">
+        <h3>⚡ Underwriting Questions</h3>
+        <span class="badge" style="background: var(--gold); color: var(--ink);">ACORD 126 — Pages 2–4</span>
+      </div>
+      <div class="card-body">
+        <p style="margin-bottom: 16px; color: var(--ink-soft);">ACORD 126 contains 38 yes/no underwriting questions across pages 2–4. Check the box below to automatically fill all of them with <strong>N</strong> (No).</p>
+        <label class="check-item" style="font-size: 1rem; font-weight: 600; gap: 12px;">
+          <input type="checkbox" id="gl_all_no" checked style="width: 18px; height: 18px;">
+          Answer all 38 underwriting questions <strong style="color: var(--success);">NO</strong>
+        </label>
+        <p style="margin-top: 10px; font-size: 0.82rem; color: var(--ink-soft);">Unchecking leaves all underwriting question fields blank.</p>
       </div>
     </div>
 
@@ -1204,6 +1234,20 @@
       </div>
     </div>
 
+    <div class="card" style="border: 2px solid var(--gold); background: #fffdf5;">
+      <div class="card-header" style="background: #fdf6e3;">
+        <h3>⚡ Underwriting Questions</h3>
+        <span class="badge" style="background: var(--gold); color: var(--ink);">ACORD 140</span>
+      </div>
+      <div class="card-body">
+        <p style="margin-bottom: 16px; color: var(--ink-soft);">ACORD 140 includes yes/no checkboxes for Sinkhole Collapse and Mine Subsidence on each premises. Check the box below to mark both as <strong>No</strong> for all premises.</p>
+        <label class="check-item" style="font-size: 1rem; font-weight: 600; gap: 12px;">
+          <input type="checkbox" id="prop_all_no" checked style="width: 18px; height: 18px;">
+          Answer Sinkhole &amp; Mine Subsidence questions <strong style="color: var(--success);">NO</strong>
+        </label>
+      </div>
+    </div>
+
     <div class="wizard-nav">
       <button class="btn btn-secondary" onclick="prevStep(4)">← Back</button>
       <button class="btn btn-primary" onclick="nextStep(4)">Next: Generate PDFs →</button>
@@ -1225,10 +1269,6 @@
         <p style="margin-bottom:16px; color:var(--ink-soft); font-size:14px;">
           Your PDFs are generated locally in your browser — nothing is transmitted. Each button generates and downloads one form. Make sure your three PDF templates are in the same folder as this file.
         </p>
-        <div class="note">
-          <strong>Template files expected:</strong> <code>Acord125CommInsApp-4.pdf</code>, <code>Acord126_GL.pdf</code>, <code>Acord-140.pdf</code><br>
-          These must be in the same folder as <code>index.html</code>.
-        </div>
 
         <div class="generate-grid">
           <div class="pdf-card">
@@ -1525,6 +1565,33 @@ async function fill125() {
   set('F[0].P3[0].Producer_CustomerIdentifier_A[0]', val('customer_id'));
   set('F[0].P4[0].Producer_CustomerIdentifier_A[0]', val('customer_id'));
 
+  // ── Underwriting Y/N questions ──
+  if (checked('app_all_no')) {
+    // Page 2 — area leased to others (locations A-D)
+    ['A','B','C','D'].forEach(r => set(`F[0].P2[0].CommercialStructure_Question_ABBCode_${r}[0]`, 'N'));
+    // Page 3 — general underwriting questions
+    [
+      'CommercialPolicy_Question_AAICode_A',   // subsidiary of another?
+      'CommercialPolicy_Question_AAJCode_A',   // has subsidiaries?
+      'CommercialPolicy_Question_KAACode_A',   // formal safety program?
+      'CommercialPolicy_Question_ABCCode_A',   // flammables/explosives/chemicals?
+      'CommercialPolicy_Question_AAHCode_A',   // other insurance with this company?
+      'CommercialPolicy_Question_AACCode_A',   // policy declined/cancelled/non-renewed?
+      'CommercialPolicy_Question_AADCode_A',   // past losses: abuse/discrimination/negligence?
+      'CommercialPolicy_Question_KABCode_A',   // indicted/convicted of crime?
+      'CommercialPolicy_Question_AAFCode_A',   // uncorrected fire code violations?
+      'CommercialPolicy_Question_KAKCode_A',   // foreclosure/bankruptcy?
+      'CommercialPolicy_Question_KALCode_A',   // judgment or lien?
+      'CommercialPolicy_Question_ABBCode_A',   // business placed in trust?
+      'CommercialPolicy_Question_KACCode_A',   // foreign operations/products?
+      'CommercialPolicy_Question_KAMCode_A',   // other business ventures?
+      'CommercialPolicy_Question_KANCode_A',   // (additional question)
+      'CommercialPolicy_Question_KAOCode_A',   // hire others to operate drones?
+    ].forEach(f => set(`F[0].P3[0].${f}[0]`, 'N'));
+    // Page 4 — no prior losses checkbox
+    try { form.getField('F[0].P4[0].LossHistory_NoPriorLossesIndicator_A[0]').check(); } catch(e) {}
+  }
+
   // Flatten and save
   form.flatten();
   return await pdf.save();
@@ -1607,6 +1674,21 @@ async function fill126() {
 
   // Page 4 header
   tx(4, 1, val('customer_id'));
+
+  // ── Underwriting Y/N questions (38 total across pages 2-4) ──
+  if (checked('gl_all_no')) {
+    const yn = [
+      [1,130],[1,132],                                           // Page 1
+      [2,2],[2,4],[2,6],[2,8],[2,10],[2,12],                    // Page 2 contractor
+      [2,40],[2,42],[2,43],[2,45],[2,47],[2,49],                // Page 2 products
+      [2,51],[2,53],[2,55],[2,57],                              // Page 2 products cont
+      [3,18],[3,20],[3,22],[3,24],[3,26],[3,28],                // Page 3
+      [3,30],[3,32],[3,34],[3,36],[3,38],[3,40],                // Page 3 cont
+      [3,42],[3,44],[3,46],                                      // Page 3 cont
+      [4,2],[4,4],[4,6],[4,8],[4,10],                           // Page 4
+    ];
+    yn.forEach(([p, n]) => tx(p, n, 'N'));
+  }
 
   form.flatten();
   return await pdf.save();
@@ -1706,12 +1788,17 @@ async function fill140() {
   set('F[0].P3[0].Producer_AuthorizedRepresentative_FullName_A[0]', val('agency_contact'));
   set('F[0].P3[0].Producer_StateLicenseIdentifier_A[0]', val('agency_code'));
 
+  // ── Sinkhole / Mine Subsidence NO for all premises ──
+  if (checked('prop_all_no')) {
+    ['A','B'].forEach(r => {
+      setCheck(`F[0].P${r === 'A' ? 1 : 2}[0].CommercialPropertyCoverage_SinkHoleCollapse_NoIndicator_${r}[0]`, true);
+      setCheck(`F[0].P${r === 'A' ? 1 : 2}[0].CommercialPropertyCoverage_MineSubsidenceOption_NoIndicator_${r}[0]`, true);
+    });
+  }
+
   form.flatten();
   return await pdf.save();
 }
-
-// ─────────────────────────────────────────
-// DOWNLOAD HELPER
 // ─────────────────────────────────────────
 function downloadPdf(bytes, filename) {
   const blob = new Blob([bytes], { type: 'application/pdf' });
