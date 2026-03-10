@@ -8,940 +8,659 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap');
-
   :root {
-    --bg: #0d0f14;
-    --surface: #161921;
-    --surface2: #1e222d;
-    --border: #2a2f3d;
-    --accent: #4f8ef7;
-    --accent2: #7c5cfc;
-    --green: #3dd68c;
-    --yellow: #f5c842;
-    --red: #f75050;
-    --text: #e8eaf0;
-    --muted: #6b7280;
-    --mono: 'DM Mono', monospace;
-    --sans: 'Sora', sans-serif;
+    --bg:#0d0f14; --surface:#161921; --surface2:#1e222d; --border:#2a2f3d;
+    --accent:#4f8ef7; --accent2:#7c5cfc; --green:#3dd68c; --yellow:#f5c842;
+    --red:#f75050; --text:#e8eaf0; --muted:#6b7280;
+    --mono:'DM Mono',monospace; --sans:'Sora',sans-serif;
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* ── Header ── */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 32px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-  }
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    font-size: 15px;
-    letter-spacing: .04em;
-  }
-  .logo-badge {
-    width: 32px; height: 32px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-  }
-  .badge {
-    font-family: var(--mono);
-    font-size: 11px;
-    padding: 3px 8px;
-    border-radius: 4px;
-    background: rgba(79,142,247,.15);
-    color: var(--accent);
-    border: 1px solid rgba(79,142,247,.3);
-  }
-
-  /* ── Main layout ── */
-  main {
-    display: grid;
-    grid-template-columns: 380px 1fr;
-    flex: 1;
-    gap: 0;
-    min-height: 0;
-  }
-
-  /* ── Left panel ── */
-  .panel-left {
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    padding: 24px;
-    gap: 20px;
-  }
-
-  .panel-section {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .panel-section h3 {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  /* ── Drop zone ── */
-  .dropzone {
-    border: 2px dashed var(--border);
-    border-radius: 12px;
-    padding: 32px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all .2s;
-    background: var(--surface2);
-    position: relative;
-  }
-  .dropzone:hover, .dropzone.drag-over {
-    border-color: var(--accent);
-    background: rgba(79,142,247,.05);
-  }
-  .dropzone input[type=file] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer;
-  }
-  .drop-icon {
-    font-size: 32px;
-    margin-bottom: 10px;
-    display: block;
-  }
-  .drop-title {
-    font-weight: 600;
-    font-size: 14px;
-    margin-bottom: 4px;
-  }
-  .drop-sub {
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  /* ── Status card ── */
-  .status-card {
-    border-radius: 10px;
-    padding: 14px 16px;
-    font-size: 13px;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    display: none;
-  }
-  .status-card.show { display: flex; }
-  .status-card.loading { background: rgba(79,142,247,.1); border: 1px solid rgba(79,142,247,.25); }
-  .status-card.success { background: rgba(61,214,140,.1); border: 1px solid rgba(61,214,140,.25); color: var(--green); }
-  .status-card.error { background: rgba(247,80,80,.1); border: 1px solid rgba(247,80,80,.25); color: var(--red); }
-  .spin { animation: spin 1s linear infinite; display: inline-block; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── Extracted data ── */
-  .data-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .data-row {
-    display: grid;
-    grid-template-columns: 130px 1fr;
-    gap: 8px;
-    align-items: start;
-  }
-  .data-label {
-    font-size: 11px;
-    color: var(--muted);
-    font-family: var(--mono);
-    padding-top: 2px;
-    line-height: 1.4;
-  }
-  .data-value {
-    font-size: 12px;
-    font-family: var(--mono);
-    color: var(--text);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 5px 8px;
-    line-height: 1.4;
-    word-break: break-word;
-  }
-  .data-value.editable {
-    cursor: text;
-    transition: border-color .15s;
-  }
-  .data-value.editable:hover { border-color: var(--accent); }
-  .data-value.editable:focus {
-    outline: none;
-    border-color: var(--accent);
-    background: rgba(79,142,247,.05);
-  }
-  .data-value.empty { color: var(--muted); font-style: italic; }
-
-  /* Vehicle cards */
-  .veh-tabs {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 4px;
-  }
-  .veh-tab {
-    font-size: 11px;
-    font-family: var(--mono);
-    padding: 4px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    cursor: pointer;
-    transition: all .15s;
-    background: transparent;
-    color: var(--muted);
-  }
-  .veh-tab.active {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-  }
-  .veh-panel { display: none; }
-  .veh-panel.active { display: flex; flex-direction: column; gap: 8px; }
-
-  /* ── Action buttons ── */
-  .btn {
-    padding: 10px 18px;
-    border-radius: 8px;
-    font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: all .15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-  }
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: white;
-    width: 100%;
-  }
-  .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
-  .btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
-  .btn-secondary {
-    background: var(--surface2);
-    color: var(--text);
-    border: 1px solid var(--border);
-    width: 100%;
-  }
-  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* ── Right panel ── */
-  .panel-right {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 32px;
-    overflow-y: auto;
-    gap: 20px;
-  }
-
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    gap: 16px;
-    opacity: .5;
-    text-align: center;
-    min-height: 400px;
-  }
-  .empty-icon { font-size: 56px; }
-  .empty-state h2 { font-size: 18px; font-weight: 600; }
-  .empty-state p { font-size: 13px; color: var(--muted); max-width: 300px; line-height: 1.6; }
-
-  /* mapping table */
-  .mapping-table {
-    width: 100%;
-    max-width: 800px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    overflow: hidden;
-    background: var(--surface);
-  }
-  .mapping-table-header {
-    display: grid;
-    grid-template-columns: 200px 1fr 1fr;
-    gap: 0;
-    background: var(--surface2);
-    padding: 10px 16px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    border-bottom: 1px solid var(--border);
-  }
-  .mapping-row {
-    display: grid;
-    grid-template-columns: 200px 1fr 1fr;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-    align-items: center;
-    font-size: 12px;
-    transition: background .1s;
-  }
-  .mapping-row:last-child { border-bottom: none; }
-  .mapping-row:hover { background: var(--surface2); }
-  .field-id { font-family: var(--mono); color: var(--muted); font-size: 11px; }
-  .field-desc { color: var(--text); }
-  .field-val {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--green);
-    background: rgba(61,214,140,.08);
-    border-radius: 4px;
-    padding: 2px 6px;
-    max-width: fit-content;
-  }
-  .field-val.empty-val { color: var(--muted); background: transparent; }
-
-  .section-header-row {
-    background: rgba(79,142,247,.06);
-    padding: 8px 16px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: .07em;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .summary-stats {
-    display: flex;
-    gap: 16px;
-    max-width: 800px;
-    width: 100%;
-  }
-  .stat-card {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-  }
-  .stat-num {
-    font-size: 28px;
-    font-weight: 700;
-    font-family: var(--mono);
-    color: var(--accent);
-  }
-  .stat-label {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 2px;
-  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--surface)}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px}
+  .logo-badge{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}
+  .badge{font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:4px;background:rgba(79,142,247,.15);color:var(--accent);border:1px solid rgba(79,142,247,.3)}
+  main{display:grid;grid-template-columns:370px 1fr;flex:1;overflow:hidden}
+  .left{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;padding:20px;gap:18px}
+  .sec h3{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:10px}
+  .dropzone{border:2px dashed var(--border);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2);position:relative}
+  .dropzone:hover,.dropzone.over{border-color:var(--accent);background:rgba(79,142,247,.05)}
+  .dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .drop-icon{font-size:28px;margin-bottom:8px;display:block}
+  .drop-title{font-weight:600;font-size:13px;margin-bottom:3px}
+  .drop-sub{font-size:11px;color:var(--muted)}
+  .status{border-radius:8px;padding:12px 14px;font-size:12px;display:none;align-items:flex-start;gap:8px}
+  .status.show{display:flex}
+  .status.loading{background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.25)}
+  .status.success{background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.25);color:var(--green)}
+  .status.error{background:rgba(247,80,80,.1);border:1px solid rgba(247,80,80,.25);color:var(--red)}
+  .spin{animation:spin 1s linear infinite;display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .dgrid{display:flex;flex-direction:column;gap:7px}
+  .drow{display:grid;grid-template-columns:130px 1fr;gap:6px;align-items:start}
+  .dlbl{font-size:10px;color:var(--muted);font-family:var(--mono);padding-top:5px;line-height:1.4}
+  .dval{font-size:12px;font-family:var(--mono);color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:4px 7px;line-height:1.4;word-break:break-all;cursor:text;transition:border-color .15s;min-height:26px}
+  .dval:focus{outline:none;border-color:var(--accent);background:rgba(79,142,247,.05)}
+  .dval.empty{color:var(--muted)}
+  .tabs{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap}
+  .tab{font-size:10px;font-family:var(--mono);padding:4px 9px;border-radius:5px;border:1px solid var(--border);cursor:pointer;transition:all .15s;background:transparent;color:var(--muted)}
+  .tab.active{background:var(--accent);color:white;border-color:var(--accent)}
+  .vpanel{display:none}
+  .vpanel.active{display:flex;flex-direction:column;gap:7px}
+  .btn{padding:10px 16px;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;width:100%}
+  .btn-p{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white}
+  .btn-p:hover{opacity:.9;transform:translateY(-1px)}
+  .btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  .btn-s{background:var(--surface2);color:var(--text);border:1px solid var(--border);margin-top:5px}
+  .btn-s:hover{border-color:var(--accent);color:var(--accent)}
+  .right{display:flex;flex-direction:column;align-items:center;padding:28px;overflow-y:auto;gap:18px}
+  .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;opacity:.5;text-align:center;min-height:300px}
+  .empty-icon{font-size:48px}
+  .stats{display:flex;gap:14px;max-width:800px;width:100%}
+  .stat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 14px}
+  .stat-n{font-size:26px;font-weight:700;font-family:var(--mono);color:var(--accent)}
+  .stat-l{font-size:10px;color:var(--muted);margin-top:2px}
+  .mtable{width:100%;max-width:800px;border-radius:10px;border:1px solid var(--border);overflow:hidden;background:var(--surface)}
+  .mhdr{display:grid;grid-template-columns:200px 1fr 130px;background:var(--surface2);padding:9px 14px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
+  .mrow{display:grid;grid-template-columns:200px 1fr 130px;padding:8px 14px;border-bottom:1px solid var(--border);align-items:center;font-size:11px;transition:background .1s}
+  .mrow:last-child{border-bottom:none}
+  .mrow:hover{background:var(--surface2)}
+  .fid{font-family:var(--mono);color:var(--muted);font-size:9px}
+  .fdesc{color:var(--text);padding:0 10px}
+  .fval{font-family:var(--mono);font-size:10px;color:var(--green);background:rgba(61,214,140,.08);border-radius:4px;padding:2px 5px}
+  .fval.mt{color:var(--muted);background:transparent}
+  .msec{background:rgba(79,142,247,.06);padding:7px 14px;font-size:10px;font-weight:700;color:var(--accent);letter-spacing:.07em;text-transform:uppercase;border-bottom:1px solid var(--border)}
+  .warn{background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.25);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--yellow);line-height:1.6;max-width:800px;width:100%}
 </style>
 </head>
 <body>
-
 <header>
   <div class="logo">
     <div class="logo-badge">📋</div>
     <span>GRL Insurance</span>
-    <span style="color:var(--muted); font-weight:300">·</span>
-    <span style="color:var(--muted); font-weight:300">ACORD 90 FL Auto-Filler</span>
+    <span style="color:var(--muted);font-weight:300;margin:0 4px">·</span>
+    <span style="color:var(--muted);font-weight:300">ACORD 90 FL Auto-Filler</span>
   </div>
-  <div class="badge">v1.0</div>
+  <div class="badge">v2.1 · Field-verified</div>
 </header>
 
 <main>
-  <!-- LEFT PANEL -->
-  <div class="panel-left">
-
-    <div class="panel-section">
-      <h3>Step 1 · Upload Dec Page</h3>
-      <div class="dropzone" id="dropzone">
-        <input type="file" id="fileInput" accept=".pdf" />
-        <span class="drop-icon">📄</span>
-        <div class="drop-title">Drop Allstate Dec Page PDF</div>
-        <div class="drop-sub">or click to browse</div>
-      </div>
-      <div class="status-card" id="statusCard">
-        <span id="statusIcon">⏳</span>
-        <span id="statusText">Processing...</span>
-      </div>
+<div class="left">
+  <div class="sec">
+    <h3>Step 1 · Upload Dec Page</h3>
+    <div class="dropzone" id="dz">
+      <input type="file" id="fi" accept=".pdf">
+      <span class="drop-icon">📄</span>
+      <div class="drop-title">Drop Allstate Dec Page PDF</div>
+      <div class="drop-sub">or click to browse · supports multi-page</div>
     </div>
-
-    <div class="panel-section" id="extractedSection" style="display:none">
-      <h3>Step 2 · Extracted Data</h3>
-      <div id="extractedData" class="data-grid"></div>
-    </div>
-
-    <div class="panel-section" id="vehicleSection" style="display:none">
-      <h3>Vehicles</h3>
-      <div class="veh-tabs" id="vehTabs"></div>
-      <div id="vehPanels"></div>
-    </div>
-
-    <div class="panel-section" id="coverageSection" style="display:none">
-      <h3>Coverages (Veh 1)</h3>
-      <div id="coverageData" class="data-grid"></div>
-    </div>
-
-    <div class="panel-section" id="actionSection" style="display:none">
-      <h3>Step 3 · Generate</h3>
-      <button class="btn btn-primary" id="fillBtn" onclick="fillAcord()">
-        <span>⚡</span> Fill ACORD 90 FL
-      </button>
-      <button class="btn btn-secondary" id="previewBtn" onclick="showPreview()" style="margin-top:6px">
-        <span>👁</span> Preview Mappings
-      </button>
-    </div>
-
+    <div class="status" id="st"><span id="si">⏳</span><span id="sm">Processing…</span></div>
   </div>
 
-  <!-- RIGHT PANEL -->
-  <div class="panel-right" id="rightPanel">
-    <div class="empty-state" id="emptyState">
-      <div class="empty-icon">📑</div>
-      <h2>No Dec Page Loaded</h2>
-      <p>Upload an Allstate declarations page PDF and we'll extract the policy data and map it to the ACORD 90 FL form fields.</p>
-    </div>
+  <div class="sec" id="s-policy" style="display:none">
+    <h3>Policy Info</h3>
+    <div id="d-policy" class="dgrid"></div>
   </div>
+
+  <div class="sec" id="s-veh" style="display:none">
+    <h3>Vehicles · Description</h3>
+    <div class="tabs" id="t-veh"></div>
+    <div id="p-veh"></div>
+  </div>
+
+  <div class="sec" id="s-cov" style="display:none">
+    <h3>Coverages · Premiums</h3>
+    <div class="tabs" id="t-cov"></div>
+    <div id="p-cov"></div>
+  </div>
+
+  <div class="sec" id="s-act" style="display:none">
+    <h3>Step 2 · Generate</h3>
+    <button class="btn btn-p" id="fillBtn" onclick="fillAcord()">⚡ Fill ACORD 90 FL &amp; Download</button>
+    <button class="btn btn-s" onclick="showPreview()">👁 Refresh Preview</button>
+  </div>
+</div>
+
+<div class="right" id="rp">
+  <div class="empty">
+    <div class="empty-icon">📑</div>
+    <h2 style="font-size:16px;font-weight:600">No Dec Page Loaded</h2>
+    <p style="font-size:12px;color:var(--muted);max-width:280px;line-height:1.6">Upload an Allstate dec page — fields will be extracted and mapped to the correct ACORD 90 FL positions.</p>
+  </div>
+</div>
 </main>
 
 <script>
-// ─── ACORD 90 FL Field Mapping ───────────────────────────────────────────────
-// Maps extracted data keys → ACORD form field IDs
-const FIELD_MAP = {
-  // Header / Agency info
-  agency:            { id: 'F[0].P1[0].Text3[0]',   label: 'Agency' },
-  policyNumber:      { id: 'F[0].P1[0].Text4[0]',   label: 'Policy Number' },
-  carrier:           { id: 'F[0].P1[0].Text5[0]',   label: 'Carrier' },
-  naicCode:          { id: 'F[0].P1[0].Text6[0]',   label: 'NAIC Code' },
-  date:              { id: 'F[0].P1[0].Text1[0]',   label: 'Date' },
-  effectiveDate:     { id: 'F[0].P1[0].Text2[0]',   label: 'Effective Date' },
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-  // Named insured & address
-  namedInsured:      { id: 'F[0].P1[0].Text7[0]',   label: 'Named Insured(s)' },
-  currentAddress:    { id: 'F[0].P1[0].Text8[0]',   label: 'Current Address' },
-  city:              { id: 'F[0].P1[0].Text9[0]',   label: 'City/State/ZIP' },
+// ═══════════════════════════════════════════════════════════════════════════
+// VERIFIED FIELD MAP  –  confirmed against actual PDF rect coordinates
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// VEHICLE DESCRIPTION — Sub-row 1 (top row per vehicle)
+//   Text24/65/100/135  x≈17   → Veh # label
+//   Text25/66/101/136  x≈26   → YEAR
+//   Text26/67/102/137  x≈50   → MAKE, MODEL (col 1)
+//   Text27/68/103/138  x≈162  → MAKE, MODEL (col 2 — continuation)
+//   Text29/70/105/140  x≈300  → VIN / Registered State
+//   Text30/71/106/141  x≈451  → HP/CC
+//   Text31/72/107/142  x≈472  → Date Leased
+//   Text32/73/108/143  x≈501  → Date Purchased
+//
+// VEHICLE DESCRIPTION — Sub-row 2 (bottom row per vehicle)
+//   Text34/75/110/145  x≈17   → Veh # (repeated)
+//   Text35/76/111/146  x≈27   → Cost New (col1)
+//   Text36/77/112/147  x≈69   → Cost New (col2)
+//   Text37/78/113/148  x≈98   → Symbol/Age Grp
+//   Text38/79/114/149  x≈127  → Terr
+//   Text39/80/115/150  x≈156  → Mile 1 Way
+//   Text40/81/116/151  x≈177  → # Days/Week
+//   Text41/82/117/152  x≈222  → Per Form
+//   Text42/83/118/153  x≈257  → Carpool
+//   Text43/84/119/154  x≈275  → Gar Code
+//   Text44/85/120/155  x≈293  → Odometer Reading
+//   Text45/86/121/156  x≈343  → Annual Mileage
+//   Text46/87/122/157  x≈386  → Govern Driver
+//   Text59/94/129/164  x≈542  → CLASS (rightmost col — also "total per vehicle")
+//
+// COVERAGES / PREMIUMS
+//   BI  y≈398: Text174=limit(x141), Text175=v1prem(x399), Text176=v2prem(x450)
+//   PD  y≈387: Text179=limit(x141), Text180=eaAcc(x271), Text181=v1prem(x399), Text182=v2prem(x449)
+//   PIP y≈375: Text185=ded(x141),   Text186=v1prem(x399), Text187=v2prem(x449)
+//   Med y≈291: Text197=limit(x141), Text198=v1prem(x399), Text199=v2prem(x449)
+//   UM  y≈268: Text209=bi$(x149),   Text211=eaAcc(x212),  Text216=v1prem(x399), Text217=v2prem(x449)
+//   Comp y≈257: Text221=ded1(x149), Text223=ded2(x212),   Text228=v1prem(x399), Text229=v2prem(x449)
+//   Coll y≈243: Text233=ded1(x149), Text235=ded2(x212),   Text240=v1prem(x399), Text241=v2prem(x449)
+//   ACV  y≈232: Text245=v1(x149),   Text247=v2(x212),     Text252=v1prem(x399), Text253=v2prem(x449)
+//   Tow  y≈221: Text257=v1(x150),   Text260=v2(x215),     Text268=v1prem(x399), Text269=v2prem(x449)
+//   TransExp y≈209: Text273=v1limit(x135), Text275=v2limit(x237), Text278=v1prem(x399), Text279=v2prem(x449)
+//   Totals y≈172: Text288=estTotal(x400), Text289=deposit(x464), Text290=balDue(x536)
 
-  // Vehicle 1
-  veh1Year:          { id: 'F[0].P1[0].Text24[0]',  label: 'Veh 1 Year' },
-  veh1Make:          { id: 'F[0].P1[0].Text26[0]',  label: 'Veh 1 Make/Model' },
-  veh1VIN:           { id: 'F[0].P1[0].Text29[0]',  label: 'Veh 1 VIN' },
+const FM = {
+  // ── Header ──────────────────────────────────────────────────────────────
+  date:           {id:'F[0].P1[0].Text1[0]',   lbl:'Date (MM/DD/YYYY)',      sec:'hdr'},
+  effDate:        {id:'F[0].P1[0].Text2[0]',   lbl:'Effective Date',          sec:'hdr'},
+  agency:         {id:'F[0].P1[0].Text3[0]',   lbl:'Agency',                  sec:'hdr'},
+  policyNum:      {id:'F[0].P1[0].Text4[0]',   lbl:'Policy Number',           sec:'hdr'},
+  carrier:        {id:'F[0].P1[0].Text5[0]',   lbl:'Carrier',                 sec:'hdr'},
+  naicCode:       {id:'F[0].P1[0].Text6[0]',   lbl:'NAIC Code',               sec:'hdr'},
+  namedInsured:   {id:'F[0].P1[0].Text7[0]',   lbl:'Named Insured(s)',        sec:'hdr'},
+  addr1:          {id:'F[0].P1[0].Text8[0]',   lbl:'Address',                 sec:'hdr'},
+  cityStateZip:   {id:'F[0].P1[0].Text9[0]',   lbl:'City / State / ZIP',      sec:'hdr'},
 
-  // Vehicle 2
-  veh2Year:          { id: 'F[0].P1[0].Text65[0]',  label: 'Veh 2 Year' },
-  veh2Make:          { id: 'F[0].P1[0].Text67[0]',  label: 'Veh 2 Make/Model' },
-  veh2VIN:           { id: 'F[0].P1[0].Text70[0]',  label: 'Veh 2 VIN' },
+  // ── Vehicle 1 — row 1 ───────────────────────────────────────────────────
+  v1Num:          {id:'F[0].P1[0].Text24[0]',  lbl:'Veh 1 #',                 sec:'v1a'},
+  v1Year:         {id:'F[0].P1[0].Text25[0]',  lbl:'Veh 1 Year',              sec:'v1a'},
+  v1Make:         {id:'F[0].P1[0].Text26[0]',  lbl:'Veh 1 Make/Model (1)',    sec:'v1a'},
+  v1Make2:        {id:'F[0].P1[0].Text27[0]',  lbl:'Veh 1 Make/Model (2)',    sec:'v1a'},
+  v1VIN:          {id:'F[0].P1[0].Text29[0]',  lbl:'Veh 1 VIN',               sec:'v1a'},
+  v1HPCC:         {id:'F[0].P1[0].Text30[0]',  lbl:'Veh 1 HP/CC',             sec:'v1a'},
+  v1DatePurch:    {id:'F[0].P1[0].Text32[0]',  lbl:'Veh 1 Date Purchased',    sec:'v1a'},
+  // Vehicle 1 — row 2
+  v1CostNew:      {id:'F[0].P1[0].Text35[0]',  lbl:'Veh 1 Cost New',          sec:'v1b'},
+  v1AnnMiles:     {id:'F[0].P1[0].Text45[0]',  lbl:'Veh 1 Annual Mileage',    sec:'v1b'},
+  v1Class:        {id:'F[0].P1[0].Text59[0]',  lbl:'Veh 1 Class / Total Prem',sec:'v1b'},
 
-  // Coverages Vehicle 1 — Liability BI
-  veh1BIPerPerson:   { id: 'F[0].P1[0].Text34[0]',  label: 'Veh1 BI Per Person' },
-  veh1BIPerOcc:      { id: 'F[0].P1[0].Text35[0]',  label: 'Veh1 BI Per Occ' },
-  veh1PDLimit:       { id: 'F[0].P1[0].Text36[0]',  label: 'Veh1 PD Limit' },
-  veh1CollDed:       { id: 'F[0].P1[0].Text41[0]',  label: 'Veh1 Collision Ded' },
-  veh1CompDed:       { id: 'F[0].P1[0].Text42[0]',  label: 'Veh1 Comp Ded' },
-  veh1CollPrem:      { id: 'F[0].P1[0].Text45[0]',  label: 'Veh1 Collision Prem' },
-  veh1CompPrem:      { id: 'F[0].P1[0].Text46[0]',  label: 'Veh1 Comp Prem' },
-  veh1BIPrem:        { id: 'F[0].P1[0].Text38[0]',  label: 'Veh1 BI Prem' },
-  veh1PDPrem:        { id: 'F[0].P1[0].Text39[0]',  label: 'Veh1 PD Prem' },
-  veh1PIPPrem:       { id: 'F[0].P1[0].Text37[0]',  label: 'Veh1 PIP Prem' },
-  veh1TotalPrem:     { id: 'F[0].P1[0].Text59[0]',  label: 'Veh1 Total Prem' },
+  // ── Vehicle 2 — row 1 ───────────────────────────────────────────────────
+  v2Num:          {id:'F[0].P1[0].Text65[0]',  lbl:'Veh 2 #',                 sec:'v2a'},
+  v2Year:         {id:'F[0].P1[0].Text66[0]',  lbl:'Veh 2 Year',              sec:'v2a'},
+  v2Make:         {id:'F[0].P1[0].Text67[0]',  lbl:'Veh 2 Make/Model (1)',    sec:'v2a'},
+  v2Make2:        {id:'F[0].P1[0].Text68[0]',  lbl:'Veh 2 Make/Model (2)',    sec:'v2a'},
+  v2VIN:          {id:'F[0].P1[0].Text70[0]',  lbl:'Veh 2 VIN',               sec:'v2a'},
+  v2HPCC:         {id:'F[0].P1[0].Text71[0]',  lbl:'Veh 2 HP/CC',             sec:'v2a'},
+  v2DatePurch:    {id:'F[0].P1[0].Text73[0]',  lbl:'Veh 2 Date Purchased',    sec:'v2a'},
+  // Vehicle 2 — row 2
+  v2CostNew:      {id:'F[0].P1[0].Text76[0]',  lbl:'Veh 2 Cost New',          sec:'v2b'},
+  v2AnnMiles:     {id:'F[0].P1[0].Text86[0]',  lbl:'Veh 2 Annual Mileage',    sec:'v2b'},
+  v2Class:        {id:'F[0].P1[0].Text94[0]',  lbl:'Veh 2 Class / Total Prem',sec:'v2b'},
 
-  // Coverages Vehicle 2 — Liability BI
-  veh2BIPerPerson:   { id: 'F[0].P1[0].Text75[0]',  label: 'Veh2 BI Per Person' },
-  veh2BIPerOcc:      { id: 'F[0].P1[0].Text76[0]',  label: 'Veh2 BI Per Occ' },
-  veh2PDLimit:       { id: 'F[0].P1[0].Text77[0]',  label: 'Veh2 PD Limit' },
-  veh2CollDed:       { id: 'F[0].P1[0].Text82[0]',  label: 'Veh2 Collision Ded' },
-  veh2CompDed:       { id: 'F[0].P1[0].Text83[0]',  label: 'Veh2 Comp Ded' },
-  veh2CollPrem:      { id: 'F[0].P1[0].Text86[0]',  label: 'Veh2 Collision Prem' },
-  veh2CompPrem:      { id: 'F[0].P1[0].Text87[0]',  label: 'Veh2 Comp Prem' },
-  veh2BIPrem:        { id: 'F[0].P1[0].Text79[0]',  label: 'Veh2 BI Prem' },
-  veh2PDPrem:        { id: 'F[0].P1[0].Text80[0]',  label: 'Veh2 PD Prem' },
-  veh2PIPPrem:       { id: 'F[0].P1[0].Text78[0]',  label: 'Veh2 PIP Prem' },
-  veh2TotalPrem:     { id: 'F[0].P1[0].Text94[0]',  label: 'Veh2 Total Prem' },
+  // ── Coverages — Bodily Injury ────────────────────────────────────────────
+  // y≈398: Text174=limit col (x141), Text175=v1 prem (x399), Text176=v2 prem (x450)
+  biLimit:        {id:'F[0].P1[0].Text174[0]', lbl:'BI Per Person Limit',      sec:'bi'},
+  biV1Prem:       {id:'F[0].P1[0].Text175[0]', lbl:'BI Veh 1 Premium',         sec:'bi'},
+  biV2Prem:       {id:'F[0].P1[0].Text176[0]', lbl:'BI Veh 2 Premium',         sec:'bi'},
 
-  // Totals
-  estimatedTotal:    { id: 'F[0].P1[0].Text92[0]',  label: 'Estimated Total' },
+  // ── Coverages — Property Damage ──────────────────────────────────────────
+  // y≈387: Text179=limit (x141), Text181=v1 prem (x399), Text182=v2 prem (x449)
+  pdLimit:        {id:'F[0].P1[0].Text179[0]', lbl:'PD Limit',                 sec:'pd'},
+  pdV1Prem:       {id:'F[0].P1[0].Text181[0]', lbl:'PD Veh 1 Premium',         sec:'pd'},
+  pdV2Prem:       {id:'F[0].P1[0].Text182[0]', lbl:'PD Veh 2 Premium',         sec:'pd'},
 
-  // Driver info — Page 2
-  driver1Name:       { id: 'F[0].P2[0].Text1[0]',   label: 'Driver 1 Name' },
-  driver1DOB:        { id: 'F[0].P2[0].date1[0]',   label: 'Driver 1 DOB' },
-  driver2Name:       { id: 'F[0].P2[0].Text9[0]',   label: 'Driver 2 Name' },
-  driver2DOB:        { id: 'F[0].P2[0].date2[0]',   label: 'Driver 2 DOB' },
+  // ── Coverages — PIP ──────────────────────────────────────────────────────
+  // y≈375: Text185=ded (x141), Text186=v1 prem (x399), Text187=v2 prem (x449)
+  pipDed:         {id:'F[0].P1[0].Text185[0]', lbl:'PIP Deductible',           sec:'pip'},
+  pipV1Prem:      {id:'F[0].P1[0].Text186[0]', lbl:'PIP Veh 1 Premium',        sec:'pip'},
+  pipV2Prem:      {id:'F[0].P1[0].Text187[0]', lbl:'PIP Veh 2 Premium',        sec:'pip'},
+
+  // ── Coverages — Medical Payments ─────────────────────────────────────────
+  medLimit:       {id:'F[0].P1[0].Text197[0]', lbl:'Med Pay Limit',            sec:'med'},
+  medV1Prem:      {id:'F[0].P1[0].Text198[0]', lbl:'Med Pay Veh 1 Prem',       sec:'med'},
+  medV2Prem:      {id:'F[0].P1[0].Text199[0]', lbl:'Med Pay Veh 2 Prem',       sec:'med'},
+
+  // ── Coverages — Comprehensive / OTC ─────────────────────────────────────
+  // y≈257: Text221=ded veh1 (x149), Text223=ded veh2 (x212)
+  // Text228=v1 prem (x399), Text229=v2 prem (x449)
+  compDed1:       {id:'F[0].P1[0].Text221[0]', lbl:'Comp Ded Veh 1',           sec:'comp'},
+  compDed2:       {id:'F[0].P1[0].Text223[0]', lbl:'Comp Ded Veh 2',           sec:'comp'},
+  compV1Prem:     {id:'F[0].P1[0].Text228[0]', lbl:'Comp Veh 1 Premium',       sec:'comp'},
+  compV2Prem:     {id:'F[0].P1[0].Text229[0]', lbl:'Comp Veh 2 Premium',       sec:'comp'},
+
+  // ── Coverages — Collision ────────────────────────────────────────────────
+  // y≈243: Text233=ded veh1 (x149), Text235=ded veh2 (x212)
+  // Text240=v1 prem (x399), Text241=v2 prem (x449)
+  collDed1:       {id:'F[0].P1[0].Text233[0]', lbl:'Coll Ded Veh 1',           sec:'coll'},
+  collDed2:       {id:'F[0].P1[0].Text235[0]', lbl:'Coll Ded Veh 2',           sec:'coll'},
+  collV1Prem:     {id:'F[0].P1[0].Text240[0]', lbl:'Coll Veh 1 Premium',       sec:'coll'},
+  collV2Prem:     {id:'F[0].P1[0].Text241[0]', lbl:'Coll Veh 2 Premium',       sec:'coll'},
+
+  // ── Coverages — Trans Exp / Rental Reimb ────────────────────────────────
+  // y≈209: Text273=v1 limit (x135), Text275=v2 limit (x237)
+  // Text278=v1 prem (x399), Text279=v2 prem (x449)
+  transV1Limit:   {id:'F[0].P1[0].Text273[0]', lbl:'Trans Exp V1 Limit',       sec:'trans'},
+  transV2Limit:   {id:'F[0].P1[0].Text275[0]', lbl:'Trans Exp V2 Limit',       sec:'trans'},
+  transV1Prem:    {id:'F[0].P1[0].Text278[0]', lbl:'Trans Exp V1 Premium',     sec:'trans'},
+  transV2Prem:    {id:'F[0].P1[0].Text279[0]', lbl:'Trans Exp V2 Premium',     sec:'trans'},
+
+  // ── Page 2 — Drivers ─────────────────────────────────────────────────────
+  drv1Name:       {id:'F[0].P2[0].Text1[0]',   lbl:'Driver 1 Name',            sec:'drv'},
+  drv2Name:       {id:'F[0].P2[0].Text9[0]',   lbl:'Driver 2 Name',            sec:'drv'},
+
+  // ── Totals ───────────────────────────────────────────────────────────────
+  // y≈172: Text288=estTotal (x400), Text289=deposit (x464), Text290=balDue (x536)
+  estTotal:       {id:'F[0].P1[0].Text288[0]', lbl:'Estimated Total',          sec:'tot'},
+  deposit:        {id:'F[0].P1[0].Text289[0]', lbl:'Deposit',                  sec:'tot'},
+  balDue:         {id:'F[0].P1[0].Text290[0]', lbl:'Balance Due',              sec:'tot'},
 };
 
-// ─── State ────────────────────────────────────────────────────────────────────
-let extractedData = {};
-let accordPdfBytes = null;
+let D = {};   // extracted data store
 
-// ─── PDF Text Extraction ─────────────────────────────────────────────────────
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-async function extractTextFromPDF(file) {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let fullText = '';
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const lines = [];
-    let lastY = null;
-    for (const item of content.items) {
-      if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
-        lines.push('\n');
-      }
-      lines.push(item.str);
-      lastY = item.transform[5];
+// ─── PDF text extraction ────────────────────────────────────────────────────
+async function extractText(file) {
+  const ab = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data:ab}).promise;
+  const pages = [];
+  for (let i=1;i<=pdf.numPages;i++) {
+    const pg = await pdf.getPage(i);
+    const ct = await pg.getTextContent();
+    let txt='', lastY=null;
+    for (const item of ct.items) {
+      if (lastY!==null && Math.abs(item.transform[5]-lastY)>4) txt+='\n';
+      txt+=item.str;
+      lastY=item.transform[5];
     }
-    fullText += lines.join(' ') + '\n\n--- PAGE BREAK ---\n\n';
+    pages.push(txt);
   }
-  return fullText;
+  return pages;
 }
 
-// ─── Data Extraction from Allstate Dec Page ───────────────────────────────────
-function parseDecPage(text) {
-  const data = {};
+// ─── Allstate dec page parser ────────────────────────────────────────────────
+function parseDec(pages) {
+  const full = pages.join('\n---\n');
+  const d = {};
 
-  // Policy number
-  const polMatch = text.match(/Policy number[:\s]*(\d[\d\s]+\d)/i);
-  if (polMatch) data.policyNumber = polMatch[1].replace(/\s+/g, ' ').trim();
+  // Date
+  d.date = new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'});
+
+  // Policy number (e.g. "981 126 969")
+  const polM = full.match(/Policy\s+[Nn]umber[:\s\n]*(\d[\d\s]{5,15}\d)/);
+  if (polM) d.policyNum = polM[1].replace(/\s+/g,' ').trim();
 
   // Named insured
-  const niMatch = text.match(/Named Insured\(s\)[:\s]*\n?([^\n]+)/i);
-  if (niMatch) data.namedInsured = niMatch[1].trim();
+  const niM = full.match(/Named\s+Insured[^\n]*\n([^\n]+)/i);
+  if (niM) d.namedInsured = niM[1].trim();
 
-  // Address
-  const addrMatch = text.match(/Mailing address[:\s]*\n?([^\n]+)\n([^\n]+)/i);
-  if (addrMatch) {
-    data.currentAddress = addrMatch[1].trim();
-    data.city = addrMatch[2].trim();
-  }
+  // Address — two lines after named insured
+  const addrM = full.match(/Named\s+Insured[^\n]*\n[^\n]+\n([^\n]+)\n([^\n]+)/i);
+  if (addrM) { d.addr1 = addrM[1].trim(); d.cityStateZip = addrM[2].trim(); }
 
   // Effective date
-  const effMatch = text.match(/policy effective date[:\s]*([A-Za-z]+ \d+,\s*\d+)/i)
-    || text.match(/Beginning ([A-Za-z]+ \d+,\s*\d+)/i)
-    || text.match(/effective date[:\s]*([\d\/]+)/i);
-  if (effMatch) data.effectiveDate = effMatch[1].trim();
+  const effM = full.match(/[Pp]olicy\s+[Pp]eriod[:\s\n]*([A-Za-z]+ \d{1,2},? \d{4})/i)
+    || full.match(/[Ee]ffective\s*[Dd]ate[:\s]*([A-Za-z]+ \d{1,2},? \d{4})/i)
+    || full.match(/Beginning\s+([A-Za-z]+ \d{1,2},? \d{4})/i);
+  if (effM) d.effDate = effM[1].trim();
 
-  // Carrier
-  const carrierMatch = text.match(/Your policy provided by\s*\n?([^\n]+(?:\n[^\n]+)?)/i)
-    || text.match(/(Allstate Fire and Casualty Insurance Company)/i);
-  if (carrierMatch) data.carrier = carrierMatch[1].replace(/\n/g, ' ').trim();
+  // Carrier & NAIC
+  const carrM = full.match(/(Allstate[^\n]+Insurance\s+Company)/i);
+  if (carrM) d.carrier = carrM[1].replace(/\s+/g,' ').trim();
+  d.naicCode = '09388';
+  d.agency = 'Gary R Lefebvre Ins';
 
-  // Agency
-  data.agency = 'Gary R Lefebvre Ins';
-  data.naicCode = '09388';
-  data.date = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
-
-  // Vehicles — parse the table
-  const vehicles = [];
-
-  // Vehicle rows: look for year + make pattern in the coverage detail sections
-  const vehPattern = /Coverage detail for (\d{4}) ([^\n]+)/gi;
-  let vm;
-  while ((vm = vehPattern.exec(text)) !== null) {
-    vehicles.push({ year: vm[1], make: vm[2].trim() });
+  // Drivers (Page 2 field)
+  const drvBlocks = [...full.matchAll(/([A-Z][a-z]+ [A-Z][a-z]+)\s+(?:male|female)/gi)];
+  if (drvBlocks[0]) d.drv1Name = drvBlocks[0][1];
+  if (drvBlocks[1]) d.drv2Name = drvBlocks[1][1];
+  // Also try simpler first/last name pattern near "primary"
+  if (!d.drv1Name) {
+    const drv1M = full.match(/Drivers?[^\n]*\n([A-Z][a-z]+ [A-Z][a-z]+)/i);
+    if (drv1M) d.drv1Name = drv1M[1];
   }
+
+  // Vehicles — find "Coverage detail for YYYY Make" sections
+  const vehRe = /Coverage detail for (\d{4}) ([^\n]+)/gi;
+  const vehs = [];
+  let vm;
+  while ((vm = vehRe.exec(full)) !== null) vehs.push({year:vm[1], make:vm[2].trim(), idx: vm.index});
 
   // VINs
-  const vinPattern = /VIN\s+([A-HJ-NPR-Z0-9]{17})/gi;
-  let vi = 0, vim;
-  while ((vim = vinPattern.exec(text)) !== null) {
-    if (vehicles[vi]) vehicles[vi].vin = vim[1];
-    vi++;
+  const vinRe = /\b([A-HJ-NPR-Z0-9]{17})\b/g;
+  const vins = [];
+  let vinM;
+  while ((vinM = vinRe.exec(full)) !== null) {
+    if (!vins.includes(vinM[1])) vins.push(vinM[1]);
+  }
+  vehs.forEach((v,i) => { if(vins[i]) v.vin = vins[i]; });
+
+  // Fill vehicle fields
+  if (vehs[0]) {
+    d.v1Num = '01';
+    d.v1Year = vehs[0].year;
+    // Split make at first comma or space-after-model
+    d.v1Make = vehs[0].make.substring(0,20);
+    d.v1Make2 = vehs[0].make.length>20 ? vehs[0].make.substring(20) : '';
+    d.v1VIN = vehs[0].vin || '';
+  }
+  if (vehs[1]) {
+    d.v2Num = '02';
+    d.v2Year = vehs[1].year;
+    d.v2Make = vehs[1].make.substring(0,20);
+    d.v2Make2 = vehs[1].make.length>20 ? vehs[1].make.substring(20) : '';
+    d.v2VIN = vehs[1].vin || '';
   }
 
-  // Also pick up from ID card section
-  const idCardVeh = text.match(/YEAR \/ MAKE \/ MODEL\s*\n?([^\n]+)\s*\n?VEHICLE ID NUMBER\s*\n?([^\n]+)/gi);
-  if (idCardVeh && vehicles.length === 0) {
-    idCardVeh.forEach((block, i) => {
-      const m = block.match(/([^\n]+)\s+([A-HJ-NPR-Z0-9]{17})/);
-      if (m) vehicles[i] = { make: m[1].trim(), vin: m[2].trim() };
-    });
+  // Per-vehicle coverage extraction
+  // Strategy: find text block between "Coverage detail for VEH_X" and next "Coverage detail" or end
+  function extractVehBlock(year, makeHint) {
+    const re = new RegExp(`Coverage detail for ${year} [^\n]*\n([\\s\\S]+?)(?=Coverage detail for|Discounts|$)`, 'i');
+    const m = full.match(re);
+    return m ? m[1] : '';
   }
 
-  if (vehicles[0]) {
-    data.veh1Year = vehicles[0].year || '';
-    data.veh1Make = vehicles[0].make || '';
-    data.veh1VIN  = vehicles[0].vin  || '';
-  }
-  if (vehicles[1]) {
-    data.veh2Year = vehicles[1].year || '';
-    data.veh2Make = vehicles[1].make || '';
-    data.veh2VIN  = vehicles[1].vin  || '';
+  function parsePrem(block, label) {
+    // Looks for: "Label\n...\n$XX.XX" or "Label ... $XX.XX"
+    const re = new RegExp(label + '[\\s\\S]{0,300}?Not applicable\\s+([\\d.]+)', 'i');
+    const m = block.match(re);
+    if (m) return m[1];
+    // Alternative — direct dollar amount after label
+    const re2 = new RegExp(label + '[^\\n]*\\n[^\\n]*\\n([\\d.]+)', 'i');
+    const m2 = block.match(re2);
+    return m2 ? m2[1] : '';
   }
 
-  // Coverage parsing helper
-  function parsePremium(label, pageText) {
-    const re = new RegExp(label + '[^\\d]*\\$?([\\d,]+\\.\\d{2})', 'i');
-    const m = pageText.match(re);
-    return m ? m[1].replace(',', '') : '';
-  }
-  function parseLimit(label, pageText) {
-    const re = new RegExp(label + '[^\\$]*\\$([\\d,]+)', 'i');
-    const m = pageText.match(re);
+  function parseDed(block, label) {
+    const re = new RegExp(label + '[\\s\\S]{0,150}?Actual cash value\\s+\\$([\\d,]+)', 'i');
+    const m = block.match(re);
     return m ? '$' + m[1] : '';
   }
 
-  // Split pages for per-vehicle parsing
-  const pages = text.split('--- PAGE BREAK ---');
-  const veh1Page = pages.find(p => /Coverage detail for \d{4} Land Rover/i.test(p)) || '';
-  const veh2Page = pages.find(p => /Coverage detail for \d{4} Mazda/i.test(p)) || '';
-
-  // Veh 1 coverages
-  if (veh1Page) {
-    // BI
-    const biMatch = veh1Page.match(/Bodily Injury[\s\S]{0,200}?\$(\d[\d,]+)\s+each person[\s\S]{0,100}?\$(\d[\d,]+)\s+each occurrence[\s\S]{0,200}?(\d[\d.]+)/i);
-    if (biMatch) {
-      data.veh1BIPerPerson = '$' + biMatch[1];
-      data.veh1BIPerOcc = '$' + biMatch[2];
-      data.veh1BIPrem = biMatch[3];
-    }
-    // PD
-    const pdMatch = veh1Page.match(/Property Damage[\s\S]{0,200}?\$(\d[\d,]+)\s+each occurrence[\s\S]{0,100}?(\d[\d.]+)/i);
-    if (pdMatch) { data.veh1PDLimit = '$' + pdMatch[1]; data.veh1PDPrem = pdMatch[2]; }
-    // Collision
-    const collMatch = veh1Page.match(/Auto Collision[\s\S]{0,50}?\$(\d[\d,]+)[\s\S]{0,100}?(\d[\d.]+)/i);
-    if (collMatch) { data.veh1CollDed = '$' + collMatch[1]; data.veh1CollPrem = collMatch[2]; }
-    // Comp
-    const compMatch = veh1Page.match(/Auto Comprehensive[\s\S]{0,50}?\$(\d[\d,]+)[\s\S]{0,100}?(\d[\d.]+)/i);
-    if (compMatch) { data.veh1CompDed = '$' + compMatch[1]; data.veh1CompPrem = compMatch[2]; }
-    // PIP
-    const pipMatch = veh1Page.match(/Personal Injury Protection[\s\S]{0,50}?(\d[\d.]+)/i);
-    if (pipMatch) data.veh1PIPPrem = pipMatch[1];
-    // Total
-    const totMatch = veh1Page.match(/Total premium for[\s\S]{0,80}?\$(\d[\d,.]+)/i);
-    if (totMatch) data.veh1TotalPrem = totMatch[1].replace(',','');
+  function parseLimit(block, label) {
+    const re = new RegExp(label + '[\\s\\S]{0,100}?\\$([\\d,]+)\\s+each\\s+(person|occurrence)', 'i');
+    const m = block.match(re);
+    return m ? '$' + m[1] : '';
   }
 
-  // Veh 2 coverages
-  if (veh2Page) {
-    const biMatch2 = veh2Page.match(/Bodily Injury[\s\S]{0,200}?\$(\d[\d,]+)\s+each person[\s\S]{0,100}?\$(\d[\d,]+)\s+each occurrence[\s\S]{0,200}?(\d[\d.]+)/i);
-    if (biMatch2) {
-      data.veh2BIPerPerson = '$' + biMatch2[1];
-      data.veh2BIPerOcc = '$' + biMatch2[2];
-      data.veh2BIPrem = biMatch2[3];
+  if (vehs[0]) {
+    const b1 = extractVehBlock(vehs[0].year, vehs[0].make);
+    // BI limit (same for both vehicles from policy level)
+    if (!d.biLimit) {
+      const biM = full.match(/\$(\d[\d,]+)\s+each person/i);
+      if (biM) d.biLimit = '$' + biM[1];
     }
-    const pdMatch2 = veh2Page.match(/Property Damage[\s\S]{0,200}?\$(\d[\d,]+)\s+each occurrence[\s\S]{0,100}?(\d[\d.]+)/i);
-    if (pdMatch2) { data.veh2PDLimit = '$' + pdMatch2[1]; data.veh2PDPrem = pdMatch2[2]; }
-    const collMatch2 = veh2Page.match(/Auto Collision[\s\S]{0,50}?\$(\d[\d,]+)[\s\S]{0,100}?(\d[\d.]+)/i);
-    if (collMatch2) { data.veh2CollDed = '$' + collMatch2[1]; data.veh2CollPrem = collMatch2[2]; }
-    const compMatch2 = veh2Page.match(/Auto Comprehensive[\s\S]{0,50}?\$(\d[\d,]+)[\s\S]{0,100}?(\d[\d.]+)/i);
-    if (compMatch2) { data.veh2CompDed = '$' + compMatch2[1]; data.veh2CompPrem = compMatch2[2]; }
-    const pipMatch2 = veh2Page.match(/Personal Injury Protection[\s\S]{0,50}?(\d[\d.]+)/i);
-    if (pipMatch2) data.veh2PIPPrem = pipMatch2[1];
-    const totMatch2 = veh2Page.match(/Total premium for[\s\S]{0,80}?\$(\d[\d,.]+)/i);
-    if (totMatch2) data.veh2TotalPrem = totMatch2[1].replace(',','');
+    if (!d.pdLimit) {
+      const pdM = full.match(/\$(\d[\d,]+)\s+each occurrence/i);
+      if (pdM) d.pdLimit = '$' + pdM[1];
+    }
+    d.biV1Prem = parsePrem(b1, 'Bodily Injury');
+    d.pdV1Prem = parsePrem(b1, 'Property Damage');
+    d.pipV1Prem = parsePrem(b1, 'Personal Injury Protection');
+    d.compDed1 = parseDed(b1, 'Comprehensive');
+    d.compV1Prem = (() => {
+      const m = b1.match(/Auto Comprehensive Insurance\s+Actual cash value\s+\$[\d,]+\s+([\d.]+)/i);
+      return m ? m[1] : '';
+    })();
+    d.collDed1 = parseDed(b1, 'Collision');
+    d.collV1Prem = (() => {
+      const m = b1.match(/Auto Collision Insurance\s+Actual cash value\s+\$[\d,]+\s+([\d.]+)/i);
+      return m ? m[1] : '';
+    })();
+    const transM1 = b1.match(/Transportation Expense[^\n]*\n[^\n]*\$(\d+)\s*\/\s*\$(\d+)\s*([\d.]+)/i);
+    if (transM1) { d.transV1Limit = `$${transM1[1]}/$${transM1[2]}`; d.transV1Prem = transM1[3]; }
+    d.v1Class = (() => {
+      const m = b1.match(/Total premium for[\s\S]{0,100}?\$([,\d]+\.\d{2})/i);
+      return m ? m[1].replace(/,/g,'') : '';
+    })();
+  }
+
+  if (vehs[1]) {
+    const b2 = extractVehBlock(vehs[1].year, vehs[1].make);
+    d.biV2Prem = parsePrem(b2, 'Bodily Injury');
+    d.pdV2Prem = parsePrem(b2, 'Property Damage');
+    d.pipV2Prem = parsePrem(b2, 'Personal Injury Protection');
+    d.compDed2 = parseDed(b2, 'Comprehensive');
+    d.compV2Prem = (() => {
+      const m = b2.match(/Auto Comprehensive Insurance\s+Actual cash value\s+\$[\d,]+\s+([\d.]+)/i);
+      return m ? m[1] : '';
+    })();
+    d.collDed2 = parseDed(b2, 'Collision');
+    d.collV2Prem = (() => {
+      const m = b2.match(/Auto Collision Insurance\s+Actual cash value\s+\$[\d,]+\s+([\d.]+)/i);
+      return m ? m[1] : '';
+    })();
+    const transM2 = b2.match(/Transportation Expense[^\n]*\n[^\n]*\$(\d+)\s*\/\s*\$(\d+)\s*([\d.]+)/i);
+    if (transM2) { d.transV2Limit = `$${transM2[1]}/$${transM2[2]}`; d.transV2Prem = transM2[3]; }
+    d.v2Class = (() => {
+      const m = b2.match(/Total premium for[\s\S]{0,100}?\$([,\d]+\.\d{2})/i);
+      return m ? m[1].replace(/,/g,'') : '';
+    })();
   }
 
   // Grand total
-  const gtMatch = text.match(/If you pay in installments[^$]*\$([\d,]+\.\d{2})/i);
-  if (gtMatch) data.estimatedTotal = gtMatch[1].replace(',','');
+  const gtM = full.match(/[Ii]f you pay in installments[^$]*\$([\d,]+\.\d{2})/i)
+    || full.match(/Total[^$\n]*:\s*\$?([\d,]+\.\d{2})/i);
+  if (gtM) d.estTotal = gtM[1].replace(/,/g,'');
 
-  // Drivers (page 2 of dec)
-  const driverPattern = /([A-Z][a-z]+ [A-Z][a-z]+)\s*-\s*Married (male|female) driver,\s*age\s*(\d+)/g;
-  let dm, dIdx = 1;
-  while ((dm = driverPattern.exec(text)) !== null) {
-    data[`driver${dIdx}Name`] = dm[1];
-    data[`driver${dIdx}Age`] = dm[3];
-    dIdx++;
-  }
-
-  return data;
+  return d;
 }
 
-// ─── UI Helpers ─────────────────────────────────────────────────────────────
+// ─── UI helpers ─────────────────────────────────────────────────────────────
 function setStatus(type, icon, msg) {
-  const card = document.getElementById('statusCard');
-  card.className = 'status-card show ' + type;
-  document.getElementById('statusIcon').textContent = icon;
-  document.getElementById('statusText').textContent = msg;
+  const el = document.getElementById('st');
+  el.className = 'status show '+type;
+  document.getElementById('si').innerHTML = icon;
+  document.getElementById('sm').textContent = msg;
 }
 
-function makeEditableField(key, val) {
-  const isEmpty = !val || val === '';
-  const div = document.createElement('div');
-  div.className = 'data-row';
-  const lbl = document.createElement('div');
-  lbl.className = 'data-label';
-  lbl.textContent = FIELD_MAP[key]?.label || key;
+function fRow(key, val) {
+  const m = FM[key]||{lbl:key};
+  const isEmpty = !val||val==='';
+  const row = document.createElement('div'); row.className='drow';
+  const lbl = document.createElement('div'); lbl.className='dlbl'; lbl.textContent=m.lbl;
   const vEl = document.createElement('div');
-  vEl.className = 'data-value editable' + (isEmpty ? ' empty' : '');
-  vEl.contentEditable = true;
-  vEl.textContent = isEmpty ? '—' : val;
-  vEl.dataset.key = key;
-  vEl.addEventListener('focus', () => { if (vEl.textContent === '—') vEl.textContent = ''; });
-  vEl.addEventListener('input', () => {
-    extractedData[key] = vEl.textContent;
-    vEl.classList.toggle('empty', !vEl.textContent);
-  });
-  div.appendChild(lbl);
-  div.appendChild(vEl);
-  return div;
+  vEl.className='dval'+(isEmpty?' empty':'');
+  vEl.contentEditable='true';
+  vEl.textContent=isEmpty?'':val;
+  vEl.dataset.key=key;
+  vEl.addEventListener('input',()=>{ D[key]=vEl.textContent.trim(); showPreview(); });
+  row.appendChild(lbl); row.appendChild(vEl);
+  return row;
 }
 
-function renderExtractedData(data) {
-  extractedData = data;
-
-  // Main policy fields
-  const mainKeys = ['date','effectiveDate','agency','policyNumber','carrier','naicCode','namedInsured','currentAddress','city'];
-  const mainSection = document.getElementById('extractedData');
-  mainSection.innerHTML = '';
-  mainKeys.forEach(k => mainSection.appendChild(makeEditableField(k, data[k])));
-  document.getElementById('extractedSection').style.display = '';
-
-  // Vehicles tabbed
-  const vehTabs = document.getElementById('vehTabs');
-  const vehPanels = document.getElementById('vehPanels');
-  vehTabs.innerHTML = ''; vehPanels.innerHTML = '';
-
-  const vehicles = [
-    { label: 'Veh 1', keys: ['veh1Year','veh1Make','veh1VIN'] },
-    { label: 'Veh 2', keys: ['veh2Year','veh2Make','veh2VIN'] },
-  ];
-
-  vehicles.forEach((v, i) => {
+function makeTabs(tabsId, panelsId, groups) {
+  const tabs = document.getElementById(tabsId);
+  const cont = document.getElementById(panelsId);
+  tabs.innerHTML=''; cont.innerHTML='';
+  groups.forEach((g,i)=>{
     const tab = document.createElement('button');
-    tab.className = 'veh-tab' + (i === 0 ? ' active' : '');
-    tab.textContent = v.label;
-    tab.onclick = () => {
-      document.querySelectorAll('.veh-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.veh-panel').forEach(p => p.classList.remove('active'));
+    tab.className='tab'+(i===0?' active':'');
+    tab.textContent=g.label;
+    const pid=tabsId+'P'+i;
+    tab.onclick=()=>{
+      tabs.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      cont.querySelectorAll('.vpanel').forEach(p=>p.classList.remove('active'));
       tab.classList.add('active');
-      document.getElementById('vehPanel' + i).classList.add('active');
+      document.getElementById(pid).classList.add('active');
     };
-    vehTabs.appendChild(tab);
-
+    tabs.appendChild(tab);
     const panel = document.createElement('div');
-    panel.id = 'vehPanel' + i;
-    panel.className = 'veh-panel' + (i === 0 ? ' active' : '');
-    v.keys.forEach(k => panel.appendChild(makeEditableField(k, data[k])));
-    vehPanels.appendChild(panel);
+    panel.id=pid; panel.className='vpanel'+(i===0?' active':'');
+    g.keys.forEach(k=>panel.appendChild(fRow(k,D[k])));
+    cont.appendChild(panel);
   });
-  document.getElementById('vehicleSection').style.display = '';
-
-  // Coverage section (veh1)
-  const covSection = document.getElementById('coverageData');
-  covSection.innerHTML = '';
-  const covKeys = ['veh1PIPPrem','veh1BIPerPerson','veh1BIPerOcc','veh1BIPrem','veh1PDLimit','veh1PDPrem','veh1CollDed','veh1CollPrem','veh1CompDed','veh1CompPrem','veh1TotalPrem'];
-  covKeys.forEach(k => covSection.appendChild(makeEditableField(k, data[k])));
-  document.getElementById('coverageSection').style.display = '';
-
-  document.getElementById('actionSection').style.display = '';
-
-  // Count filled
-  const filled = Object.values(data).filter(v => v && v !== '').length;
-  const total = Object.keys(FIELD_MAP).length;
-  showMappingPreview(data, filled, total);
 }
 
-function showMappingPreview(data, filled, total) {
-  const right = document.getElementById('rightPanel');
-  document.getElementById('emptyState')?.remove();
+function renderLeft(data) {
+  D = {...data};
+  // Policy
+  const pd = document.getElementById('d-policy'); pd.innerHTML='';
+  ['date','effDate','agency','policyNum','carrier','naicCode','namedInsured','addr1','cityStateZip']
+    .forEach(k=>pd.appendChild(fRow(k,D[k])));
+  document.getElementById('s-policy').style.display='';
 
-  right.innerHTML = '';
+  // Vehicles
+  makeTabs('t-veh','p-veh',[
+    {label:'Veh 1 Info', keys:['v1Num','v1Year','v1Make','v1Make2','v1VIN','v1HPCC','v1DatePurch']},
+    {label:'Veh 1 Stats', keys:['v1CostNew','v1AnnMiles','v1Class']},
+    {label:'Veh 2 Info', keys:['v2Num','v2Year','v2Make','v2Make2','v2VIN','v2HPCC','v2DatePurch']},
+    {label:'Veh 2 Stats', keys:['v2CostNew','v2AnnMiles','v2Class']},
+  ]);
+  document.getElementById('s-veh').style.display='';
 
-  // Stats
-  const stats = document.createElement('div');
-  stats.className = 'summary-stats';
-  stats.innerHTML = `
-    <div class="stat-card">
-      <div class="stat-num" style="color:var(--green)">${filled}</div>
-      <div class="stat-label">Fields mapped</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" style="color:var(--yellow)">${total - filled}</div>
-      <div class="stat-label">Needs manual entry</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num">${total}</div>
-      <div class="stat-label">Total key fields</div>
-    </div>
-  `;
-  right.appendChild(stats);
+  // Coverages
+  makeTabs('t-cov','p-cov',[
+    {label:'BI', keys:['biLimit','biV1Prem','biV2Prem']},
+    {label:'PD', keys:['pdLimit','pdV1Prem','pdV2Prem']},
+    {label:'PIP', keys:['pipDed','pipV1Prem','pipV2Prem']},
+    {label:'Comp', keys:['compDed1','compDed2','compV1Prem','compV2Prem']},
+    {label:'Coll', keys:['collDed1','collDed2','collV1Prem','collV2Prem']},
+    {label:'Trans', keys:['transV1Limit','transV2Limit','transV1Prem','transV2Prem']},
+    {label:'Totals', keys:['estTotal','deposit','balDue']},
+    {label:'Drivers', keys:['drv1Name','drv2Name']},
+  ]);
+  document.getElementById('s-cov').style.display='';
+  document.getElementById('s-act').style.display='';
 
-  // Table
-  const table = document.createElement('div');
-  table.className = 'mapping-table';
-
-  const hdr = document.createElement('div');
-  hdr.className = 'mapping-table-header';
-  hdr.innerHTML = '<span>ACORD Field ID</span><span>Description</span><span>Extracted Value</span>';
-  table.appendChild(hdr);
-
-  const sections = [
-    { title: 'Policy Header', keys: ['date','effectiveDate','agency','policyNumber','carrier','naicCode'] },
-    { title: 'Named Insured & Address', keys: ['namedInsured','currentAddress','city'] },
-    { title: 'Vehicle 1', keys: ['veh1Year','veh1Make','veh1VIN'] },
-    { title: 'Vehicle 2', keys: ['veh2Year','veh2Make','veh2VIN'] },
-    { title: 'Vehicle 1 Coverages', keys: ['veh1PIPPrem','veh1BIPerPerson','veh1BIPerOcc','veh1BIPrem','veh1PDLimit','veh1PDPrem','veh1CollDed','veh1CollPrem','veh1CompDed','veh1CompPrem','veh1TotalPrem'] },
-    { title: 'Vehicle 2 Coverages', keys: ['veh2PIPPrem','veh2BIPerPerson','veh2BIPerOcc','veh2BIPrem','veh2PDLimit','veh2PDPrem','veh2CollDed','veh2CollPrem','veh2CompDed','veh2CompPrem','veh2TotalPrem'] },
-    { title: 'Totals', keys: ['estimatedTotal'] },
-    { title: 'Drivers', keys: ['driver1Name','driver1DOB','driver2Name','driver2DOB'] },
-  ];
-
-  sections.forEach(sec => {
-    const sh = document.createElement('div');
-    sh.className = 'section-header-row';
-    sh.textContent = sec.title;
-    table.appendChild(sh);
-
-    sec.keys.forEach(k => {
-      const map = FIELD_MAP[k];
-      if (!map) return;
-      const val = data[k] || '';
-      const row = document.createElement('div');
-      row.className = 'mapping-row';
-      row.innerHTML = `
-        <span class="field-id">${map.id}</span>
-        <span class="field-desc">${map.label}</span>
-        <span class="field-val ${!val ? 'empty-val' : ''}">${val || '—'}</span>
-      `;
-      table.appendChild(row);
-    });
-  });
-
-  right.appendChild(table);
+  showPreview();
 }
 
 function showPreview() {
-  const filled = Object.values(extractedData).filter(v => v && v !== '').length;
-  showMappingPreview(extractedData, filled, Object.keys(FIELD_MAP).length);
+  const rp = document.getElementById('rp');
+  rp.innerHTML='';
+
+  const filled = Object.keys(FM).filter(k=>D[k]&&D[k]!=='').length;
+  const total = Object.keys(FM).length;
+  const missing = total-filled;
+
+  // Stats row
+  const stats = document.createElement('div'); stats.className='stats';
+  stats.innerHTML=`
+    <div class="stat"><div class="stat-n" style="color:var(--green)">${filled}</div><div class="stat-l">Fields mapped</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--yellow)">${missing}</div><div class="stat-l">Manual entry needed</div></div>
+    <div class="stat"><div class="stat-n">${total}</div><div class="stat-l">Key fields total</div></div>`;
+  rp.appendChild(stats);
+
+  if (missing > 0) {
+    const warn = document.createElement('div'); warn.className='warn';
+    warn.textContent='⚠️ Fields shown as "—" will be left blank on the ACORD form. Fill them in on the left before generating.';
+    rp.appendChild(warn);
+  }
+
+  // Mapping table
+  const sections = {
+    'Policy Header': ['date','effDate','agency','policyNum','carrier','naicCode','namedInsured','addr1','cityStateZip'],
+    'Vehicle 1 — Description Row 1': ['v1Num','v1Year','v1Make','v1Make2','v1VIN','v1HPCC','v1DatePurch'],
+    'Vehicle 1 — Row 2 (Stats)': ['v1CostNew','v1AnnMiles','v1Class'],
+    'Vehicle 2 — Description Row 1': ['v2Num','v2Year','v2Make','v2Make2','v2VIN','v2HPCC','v2DatePurch'],
+    'Vehicle 2 — Row 2 (Stats)': ['v2CostNew','v2AnnMiles','v2Class'],
+    'Bodily Injury (y≈398)': ['biLimit','biV1Prem','biV2Prem'],
+    'Property Damage (y≈387)': ['pdLimit','pdV1Prem','pdV2Prem'],
+    'PIP (y≈375)': ['pipDed','pipV1Prem','pipV2Prem'],
+    'Medical Payments (y≈291)': ['medLimit','medV1Prem','medV2Prem'],
+    'Comprehensive (y≈257)': ['compDed1','compDed2','compV1Prem','compV2Prem'],
+    'Collision (y≈243)': ['collDed1','collDed2','collV1Prem','collV2Prem'],
+    'Trans Exp / Rental (y≈209)': ['transV1Limit','transV2Limit','transV1Prem','transV2Prem'],
+    'Drivers (Page 2)': ['drv1Name','drv2Name'],
+    'Totals (y≈172)': ['estTotal','deposit','balDue'],
+  };
+
+  const table = document.createElement('div'); table.className='mtable';
+  const hdr = document.createElement('div'); hdr.className='mhdr';
+  hdr.innerHTML='<span>Field ID</span><span>Description</span><span>Value</span>';
+  table.appendChild(hdr);
+
+  for (const [sec, keys] of Object.entries(sections)) {
+    const sh = document.createElement('div'); sh.className='msec'; sh.textContent=sec;
+    table.appendChild(sh);
+    keys.forEach(k=>{
+      const m = FM[k]; if(!m) return;
+      const val = D[k]||'';
+      const row = document.createElement('div'); row.className='mrow';
+      const shortId = m.id.replace('F[0].P1[0].','').replace('F[0].P2[0].','P2·').replace('[0]','');
+      row.innerHTML=`<span class="fid">${shortId}</span><span class="fdesc">${m.lbl}</span><span class="fval ${!val?'mt':''}">${val||'—'}</span>`;
+      table.appendChild(row);
+    });
+  }
+  rp.appendChild(table);
 }
 
-// ─── ACORD PDF Filling ───────────────────────────────────────────────────────
+// ─── ACORD PDF fill & download ───────────────────────────────────────────────
 async function fillAcord() {
   const btn = document.getElementById('fillBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spin">⚙️</span> Filling...';
-
+  btn.disabled=true; btn.innerHTML='<span class="spin">⚙️</span> Generating…';
   try {
-    // Load the unlocked ACORD PDF
-    let pdfBytes;
-    if (accordPdfBytes) {
-      pdfBytes = accordPdfBytes;
-    } else {
-      // Try to load from same directory
-      const resp = await fetch('FL_Auto_app_unlocked.pdf');
-      if (!resp.ok) throw new Error('Could not load FL_Auto_app_unlocked.pdf — make sure it is in the same folder as this HTML file.');
-      pdfBytes = await resp.arrayBuffer();
-    }
-
+    const resp = await fetch('FL_Auto_app_unlocked.pdf');
+    if(!resp.ok) throw new Error('Cannot load FL_Auto_app_unlocked.pdf — place it in the same folder as this HTML file.');
+    const pdfBytes = await resp.arrayBuffer();
     const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
 
-    // Fill each mapped field
-    let filled = 0;
-    for (const [key, map] of Object.entries(FIELD_MAP)) {
-      const val = extractedData[key];
-      if (!val) continue;
-      try {
-        const field = form.getTextField(map.id);
-        field.setText(val);
-        filled++;
-      } catch(e) {
-        // field may not exist or be wrong type — skip silently
-      }
+    let filled=0, notFound=[];
+    for (const [key, map] of Object.entries(FM)) {
+      const val = D[key];
+      if (!val||val==='') continue;
+      try { form.getTextField(map.id).setText(String(val)); filled++; }
+      catch(e) { notFound.push(map.id); }
     }
 
-    const filledBytes = await pdfDoc.save();
-    const blob = new Blob([filledBytes], { type: 'application/pdf' });
+    const bytes = await pdfDoc.save();
+    const blob = new Blob([bytes],{type:'application/pdf'});
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-
-    // Build filename from insured name
-    const name = (extractedData.namedInsured || 'client').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_');
-    a.download = `ACORD90FL_${name}_${new Date().toISOString().slice(0,10)}.pdf`;
+    const a = document.createElement('a'); a.href=url;
+    const nm = (D.namedInsured||'client').replace(/[^a-zA-Z0-9 ]/g,'').replace(/\s+/g,'_');
+    a.download = `ACORD90FL_${nm}_${new Date().toISOString().slice(0,10)}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
 
-    setStatus('success', '✅', `Done! Filled ${filled} fields and downloaded the ACORD form.`);
-  } catch (err) {
-    setStatus('error', '❌', err.message);
-    console.error(err);
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = '<span>⚡</span> Fill ACORD 90 FL';
-}
-
-// ─── File input handling ─────────────────────────────────────────────────────
-async function handleFile(file) {
-  if (!file || file.type !== 'application/pdf') {
-    setStatus('error', '❌', 'Please upload a PDF file.');
-    return;
-  }
-
-  setStatus('loading', '<span class="spin">⏳</span>', `Reading "${file.name}"...`);
-  document.getElementById('statusCard').style.display = 'flex';
-
-  try {
-    const text = await extractTextFromPDF(file);
-    const data = parseDecPage(text);
-
-    const filled = Object.values(data).filter(v => v && v !== '').length;
-    setStatus('success', '✅', `Extracted ${filled} fields from "${file.name}". Review and edit below.`);
-
-    renderExtractedData(data);
-
+    const note = notFound.length ? ` (${notFound.length} field IDs not found — check console)` : '';
+    setStatus('success','✅',`Filled ${filled} fields and downloaded.${note}`);
+    if(notFound.length) console.warn('Fields not found:', notFound);
   } catch(err) {
-    setStatus('error', '❌', 'Failed to parse PDF: ' + err.message);
+    setStatus('error','❌', err.message);
+    console.error(err);
+  }
+  btn.disabled=false; btn.innerHTML='⚡ Fill ACORD 90 FL &amp; Download';
+}
+
+// ─── File input ──────────────────────────────────────────────────────────────
+async function handleFile(file) {
+  if(!file||file.type!=='application/pdf') { setStatus('error','❌','Please upload a PDF file.'); return; }
+  setStatus('loading','<span class="spin">⏳</span>',`Reading "${file.name}"…`);
+  document.getElementById('st').style.display='flex';
+  try {
+    const pages = await extractText(file);
+    const data = parseDec(pages);
+    const cnt = Object.values(data).filter(v=>v&&v!=='').length;
+    setStatus('success','✅',`Extracted ${cnt} values. Review fields on the left, then generate.`);
+    renderLeft(data);
+  } catch(err) {
+    setStatus('error','❌','Parse error: '+err.message);
     console.error(err);
   }
 }
 
-// Allow loading the ACORD PDF via drag-and-drop separately
-let decFileLoaded = false;
-
-document.getElementById('fileInput').addEventListener('change', (e) => {
-  if (e.target.files[0]) handleFile(e.target.files[0]);
-});
-
-const dz = document.getElementById('dropzone');
-dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
-dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-dz.addEventListener('drop', e => {
-  e.preventDefault();
-  dz.classList.remove('drag-over');
-  const files = e.dataTransfer.files;
-  if (files[0]) handleFile(files[0]);
-});
-
-// Allow dropping the blank ACORD PDF on the page (outside drop zone)
-document.body.addEventListener('dragover', e => e.preventDefault());
-document.body.addEventListener('drop', async (e) => {
-  e.preventDefault();
-  const files = Array.from(e.dataTransfer.files);
-  const accordFile = files.find(f => f.name.toLowerCase().includes('acord') || f.name.toLowerCase().includes('unlocked'));
-  if (accordFile) {
-    accordPdfBytes = await accordFile.arrayBuffer();
-    setStatus('success', '📋', `ACORD form loaded: "${accordFile.name}"`);
-  }
-});
+document.getElementById('fi').addEventListener('change', e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+const dz = document.getElementById('dz');
+dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', ()=>dz.classList.remove('over'));
+dz.addEventListener('drop', e=>{ e.preventDefault(); dz.classList.remove('over'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
 </script>
 </body>
 </html>
