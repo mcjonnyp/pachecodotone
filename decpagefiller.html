@@ -81,7 +81,7 @@
     <span style="color:var(--muted);font-weight:300;margin:0 4px">·</span>
     <span style="color:var(--muted);font-weight:300">ACORD 90 FL Auto-Filler</span>
   </div>
-  <div class="badge">v2.1 · Field-verified</div>
+  <div class="badge">v2.2 · Field-verified</div>
 </header>
 
 <main>
@@ -215,22 +215,24 @@ const FM = {
   v2Class:        {id:'F[0].P1[0].Text94[0]',  lbl:'Veh 2 Class / Total Prem',sec:'v2b'},
 
   // ── Coverages — Bodily Injury ────────────────────────────────────────────
-  // y≈398: Text174=limit col (x141), Text175=v1 prem (x399), Text176=v2 prem (x450)
-  biLimit:        {id:'F[0].P1[0].Text174[0]', lbl:'BI Per Person Limit',      sec:'bi'},
-  biV1Prem:       {id:'F[0].P1[0].Text175[0]', lbl:'BI Veh 1 Premium',         sec:'bi'},
-  biV2Prem:       {id:'F[0].P1[0].Text176[0]', lbl:'BI Veh 2 Premium',         sec:'bi'},
+  // VERIFIED via labeled PDF: Text179=BI per person (x141 y≈387), Text180=BI per accident (x271)
+  // Text181=v1 prem (x399), Text182=v2 prem (x449)
+  // NOTE: Text174 is CSL limit row — left blank for split-limit personal auto policies
+  biLimit:        {id:'F[0].P1[0].Text179[0]', lbl:'BI Per Person Limit',      sec:'bi'},
+  biPerAcc:       {id:'F[0].P1[0].Text180[0]', lbl:'BI Per Accident Limit',    sec:'bi'},
+  biV1Prem:       {id:'F[0].P1[0].Text181[0]', lbl:'BI Veh 1 Premium',         sec:'bi'},
+  biV2Prem:       {id:'F[0].P1[0].Text182[0]', lbl:'BI Veh 2 Premium',         sec:'bi'},
 
   // ── Coverages — Property Damage ──────────────────────────────────────────
-  // y≈387: Text179=limit (x141), Text181=v1 prem (x399), Text182=v2 prem (x449)
-  pdLimit:        {id:'F[0].P1[0].Text179[0]', lbl:'PD Limit',                 sec:'pd'},
-  pdV1Prem:       {id:'F[0].P1[0].Text181[0]', lbl:'PD Veh 1 Premium',         sec:'pd'},
-  pdV2Prem:       {id:'F[0].P1[0].Text182[0]', lbl:'PD Veh 2 Premium',         sec:'pd'},
+  // VERIFIED: Text185=PD limit (x141 y≈375), Text186=v1 prem (x399), Text187=v2 prem (x449)
+  pdLimit:        {id:'F[0].P1[0].Text185[0]', lbl:'PD Limit',                 sec:'pd'},
+  pdV1Prem:       {id:'F[0].P1[0].Text186[0]', lbl:'PD Veh 1 Premium',         sec:'pd'},
+  pdV2Prem:       {id:'F[0].P1[0].Text187[0]', lbl:'PD Veh 2 Premium',         sec:'pd'},
 
   // ── Coverages — PIP ──────────────────────────────────────────────────────
-  // y≈375: Text185=ded (x141), Text186=v1 prem (x399), Text187=v2 prem (x449)
-  pipDed:         {id:'F[0].P1[0].Text185[0]', lbl:'PIP Deductible',           sec:'pip'},
-  pipV1Prem:      {id:'F[0].P1[0].Text186[0]', lbl:'PIP Veh 1 Premium',        sec:'pip'},
-  pipV2Prem:      {id:'F[0].P1[0].Text187[0]', lbl:'PIP Veh 2 Premium',        sec:'pip'},
+  // PIP premium cells are at y≈340: Text190=v1 prem (x399), Text192=v2 prem (x449)
+  pipV1Prem:      {id:'F[0].P1[0].Text190[0]', lbl:'PIP Veh 1 Premium',        sec:'pip'},
+  pipV2Prem:      {id:'F[0].P1[0].Text192[0]', lbl:'PIP Veh 2 Premium',        sec:'pip'},
 
   // ── Coverages — Medical Payments ─────────────────────────────────────────
   medLimit:       {id:'F[0].P1[0].Text197[0]', lbl:'Med Pay Limit',            sec:'med'},
@@ -238,20 +240,20 @@ const FM = {
   medV2Prem:      {id:'F[0].P1[0].Text199[0]', lbl:'Med Pay Veh 2 Prem',       sec:'med'},
 
   // ── Coverages — Comprehensive / OTC ─────────────────────────────────────
-  // y≈257: Text221=ded veh1 (x149), Text223=ded veh2 (x212)
-  // Text228=v1 prem (x399), Text229=v2 prem (x449)
-  compDed1:       {id:'F[0].P1[0].Text221[0]', lbl:'Comp Ded Veh 1',           sec:'comp'},
-  compDed2:       {id:'F[0].P1[0].Text223[0]', lbl:'Comp Ded Veh 2',           sec:'comp'},
-  compV1Prem:     {id:'F[0].P1[0].Text228[0]', lbl:'Comp Veh 1 Premium',       sec:'comp'},
-  compV2Prem:     {id:'F[0].P1[0].Text229[0]', lbl:'Comp Veh 2 Premium',       sec:'comp'},
+  // VERIFIED: Text209=ded veh1 (x149 y≈268), Text211=ded veh2 (x212)
+  // Text216=v1 prem (x399), Text217=v2 prem (x449)
+  compDed1:       {id:'F[0].P1[0].Text209[0]', lbl:'Comp Ded Veh 1',           sec:'comp'},
+  compDed2:       {id:'F[0].P1[0].Text211[0]', lbl:'Comp Ded Veh 2',           sec:'comp'},
+  compV1Prem:     {id:'F[0].P1[0].Text216[0]', lbl:'Comp Veh 1 Premium',       sec:'comp'},
+  compV2Prem:     {id:'F[0].P1[0].Text217[0]', lbl:'Comp Veh 2 Premium',       sec:'comp'},
 
   // ── Coverages — Collision ────────────────────────────────────────────────
-  // y≈243: Text233=ded veh1 (x149), Text235=ded veh2 (x212)
-  // Text240=v1 prem (x399), Text241=v2 prem (x449)
-  collDed1:       {id:'F[0].P1[0].Text233[0]', lbl:'Coll Ded Veh 1',           sec:'coll'},
-  collDed2:       {id:'F[0].P1[0].Text235[0]', lbl:'Coll Ded Veh 2',           sec:'coll'},
-  collV1Prem:     {id:'F[0].P1[0].Text240[0]', lbl:'Coll Veh 1 Premium',       sec:'coll'},
-  collV2Prem:     {id:'F[0].P1[0].Text241[0]', lbl:'Coll Veh 2 Premium',       sec:'coll'},
+  // VERIFIED: Text221=ded veh1 (x149 y≈257), Text223=ded veh2 (x212)
+  // Text228=v1 prem (x399), Text229=v2 prem (x449)
+  collDed1:       {id:'F[0].P1[0].Text221[0]', lbl:'Coll Ded Veh 1',           sec:'coll'},
+  collDed2:       {id:'F[0].P1[0].Text223[0]', lbl:'Coll Ded Veh 2',           sec:'coll'},
+  collV1Prem:     {id:'F[0].P1[0].Text228[0]', lbl:'Coll Veh 1 Premium',       sec:'coll'},
+  collV2Prem:     {id:'F[0].P1[0].Text229[0]', lbl:'Coll Veh 2 Premium',       sec:'coll'},
 
   // ── Coverages — Trans Exp / Rental Reimb ────────────────────────────────
   // y≈209: Text273=v1 limit (x135), Text275=v2 limit (x237)
@@ -309,9 +311,20 @@ function parseDec(pages) {
   const niM = full.match(/Named\s+Insured[^\n]*\n([^\n]+)/i);
   if (niM) d.namedInsured = niM[1].trim();
 
-  // Address — two lines after named insured
-  const addrM = full.match(/Named\s+Insured[^\n]*\n[^\n]+\n([^\n]+)\n([^\n]+)/i);
-  if (addrM) { d.addr1 = addrM[1].trim(); d.cityStateZip = addrM[2].trim(); }
+  // Address — street address line and city/state/zip
+  const addrM = full.match(/Mailing address[:\s]*\n([^\n]+)\n([^\n]+)/i)
+    || full.match(/(?:street|property|residence) address[:\s]*\n([^\n]+)\n([^\n]+)/i)
+    || full.match(/27\d{3} [^\n]+\n[^\n]+ FL \d{5}/i);
+  if (addrM && addrM[1]) { d.addr1 = addrM[1].trim(); d.cityStateZip = addrM[2].trim(); }
+  // Fallback: find street address directly after named insured
+  if (!d.addr1 && d.namedInsured) {
+    const niIdx = full.indexOf(d.namedInsured);
+    if (niIdx > -1) {
+      const after = full.substring(niIdx + d.namedInsured.length).trimStart();
+      const lines = after.split('\n').map(l=>l.trim()).filter(l=>l.length>3);
+      if (lines[0] && /\d/.test(lines[0])) { d.addr1 = lines[0]; d.cityStateZip = lines[1]||''; }
+    }
+  }
 
   // Effective date
   const effM = full.match(/[Pp]olicy\s+[Pp]eriod[:\s\n]*([A-Za-z]+ \d{1,2},? \d{4})/i)
@@ -400,13 +413,25 @@ function parseDec(pages) {
 
   if (vehs[0]) {
     const b1 = extractVehBlock(vehs[0].year, vehs[0].make);
-    // BI limit (same for both vehicles from policy level)
+    // BI limit — per person and per accident
     if (!d.biLimit) {
       const biM = full.match(/\$(\d[\d,]+)\s+each person/i);
       if (biM) d.biLimit = '$' + biM[1];
     }
+    if (!d.biPerAcc) {
+      const biAccM = full.match(/\$(\d[\d,]+)\s+each (?:accident|occurrence)[\s\S]{0,30}(?:Bodily|BI)/i)
+        || full.match(/(?:Bodily|BI)[\s\S]{0,80}\$(\d[\d,]+)\s+each (?:accident|occurrence)/i);
+      if (biAccM) d.biPerAcc = '$' + biAccM[1];
+      else if (d.biLimit) {
+        // Common FL split: if per person is 100k, per accident is typically 300k
+        const commonMap = {'$100,000':'$300,000','$50,000':'$100,000','$250,000':'$500,000','$300,000':'$500,000'};
+        d.biPerAcc = commonMap[d.biLimit] || '';
+      }
+    }
     if (!d.pdLimit) {
-      const pdM = full.match(/\$(\d[\d,]+)\s+each occurrence/i);
+      // PD uses "each occurrence" — find it separately from BI
+      const pdM = full.match(/Property Damage[\s\S]{0,150}?\$(\d[\d,]+)\s+each occurrence/i)
+        || full.match(/\$(\d{2,3},\d{3})\s+each occurrence[\s\S]{0,50}Property Damage/i);
       if (pdM) d.pdLimit = '$' + pdM[1];
     }
     d.biV1Prem = parsePrem(b1, 'Bodily Injury');
@@ -526,9 +551,9 @@ function renderLeft(data) {
 
   // Coverages
   makeTabs('t-cov','p-cov',[
-    {label:'BI', keys:['biLimit','biV1Prem','biV2Prem']},
+    {label:'BI', keys:['biLimit','biPerAcc','biV1Prem','biV2Prem']},
     {label:'PD', keys:['pdLimit','pdV1Prem','pdV2Prem']},
-    {label:'PIP', keys:['pipDed','pipV1Prem','pipV2Prem']},
+    {label:'PIP', keys:['pipV1Prem','pipV2Prem']},
     {label:'Comp', keys:['compDed1','compDed2','compV1Prem','compV2Prem']},
     {label:'Coll', keys:['collDed1','collDed2','collV1Prem','collV2Prem']},
     {label:'Trans', keys:['transV1Limit','transV2Limit','transV1Prem','transV2Prem']},
@@ -570,12 +595,12 @@ function showPreview() {
     'Vehicle 1 — Row 2 (Stats)': ['v1CostNew','v1AnnMiles','v1Class'],
     'Vehicle 2 — Description Row 1': ['v2Num','v2Year','v2Make','v2Make2','v2VIN','v2HPCC','v2DatePurch'],
     'Vehicle 2 — Row 2 (Stats)': ['v2CostNew','v2AnnMiles','v2Class'],
-    'Bodily Injury (y≈398)': ['biLimit','biV1Prem','biV2Prem'],
-    'Property Damage (y≈387)': ['pdLimit','pdV1Prem','pdV2Prem'],
-    'PIP (y≈375)': ['pipDed','pipV1Prem','pipV2Prem'],
-    'Medical Payments (y≈291)': ['medLimit','medV1Prem','medV2Prem'],
-    'Comprehensive (y≈257)': ['compDed1','compDed2','compV1Prem','compV2Prem'],
-    'Collision (y≈243)': ['collDed1','collDed2','collV1Prem','collV2Prem'],
+    'Bodily Injury (Text179/180/181/182)': ['biLimit','biPerAcc','biV1Prem','biV2Prem'],
+    'Property Damage (Text185/186/187)': ['pdLimit','pdV1Prem','pdV2Prem'],
+    'PIP (Text190/192)': ['pipV1Prem','pipV2Prem'],
+    'Medical Payments (Text197-201)': ['medLimit','medV1Prem','medV2Prem'],
+    'Comprehensive (Text209/211/216/217)': ['compDed1','compDed2','compV1Prem','compV2Prem'],
+    'Collision (Text221/223/228/229)': ['collDed1','collDed2','collV1Prem','collV2Prem'],
     'Trans Exp / Rental (y≈209)': ['transV1Limit','transV2Limit','transV1Prem','transV2Prem'],
     'Drivers (Page 2)': ['drv1Name','drv2Name'],
     'Totals (y≈172)': ['estTotal','deposit','balDue'],
