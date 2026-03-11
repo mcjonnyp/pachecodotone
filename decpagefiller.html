@@ -81,7 +81,7 @@
     <span style="color:var(--muted);font-weight:300;margin:0 4px">·</span>
     <span style="color:var(--muted);font-weight:300">ACORD 90 FL Auto-Filler</span>
   </div>
-  <div class="badge">v2.2 · Field-verified</div>
+  <div class="badge">v2.3 · 4-vehicle</div>
 </header>
 
 <main>
@@ -214,6 +214,24 @@ const FM = {
   v2AnnMiles:     {id:'F[0].P1[0].Text86[0]',  lbl:'Veh 2 Annual Mileage',    sec:'v2b'},
   v2Class:        {id:'F[0].P1[0].Text94[0]',  lbl:'Veh 2 Class / Total Prem',sec:'v2b'},
 
+  // ── Vehicle 3 — row 1 ───────────────────────────────────────────────────
+  v3Num:          {id:'F[0].P1[0].Text100[0]', lbl:'Veh 3 #',                 sec:'v3a'},
+  v3Year:         {id:'F[0].P1[0].Text101[0]', lbl:'Veh 3 Year',              sec:'v3a'},
+  v3Make:         {id:'F[0].P1[0].Text102[0]', lbl:'Veh 3 Make/Model (1)',    sec:'v3a'},
+  v3Make2:        {id:'F[0].P1[0].Text103[0]', lbl:'Veh 3 Make/Model (2)',    sec:'v3a'},
+  v3VIN:          {id:'F[0].P1[0].Text105[0]', lbl:'Veh 3 VIN',               sec:'v3a'},
+  // Vehicle 3 — row 2
+  v3Class:        {id:'F[0].P1[0].Text129[0]', lbl:'Veh 3 Class / Total Prem',sec:'v3b'},
+
+  // ── Vehicle 4 — row 1 ───────────────────────────────────────────────────
+  v4Num:          {id:'F[0].P1[0].Text135[0]', lbl:'Veh 4 #',                 sec:'v4a'},
+  v4Year:         {id:'F[0].P1[0].Text136[0]', lbl:'Veh 4 Year',              sec:'v4a'},
+  v4Make:         {id:'F[0].P1[0].Text137[0]', lbl:'Veh 4 Make/Model (1)',    sec:'v4a'},
+  v4Make2:        {id:'F[0].P1[0].Text138[0]', lbl:'Veh 4 Make/Model (2)',    sec:'v4a'},
+  v4VIN:          {id:'F[0].P1[0].Text140[0]', lbl:'Veh 4 VIN',               sec:'v4a'},
+  // Vehicle 4 — row 2
+  v4Class:        {id:'F[0].P1[0].Text164[0]', lbl:'Veh 4 Class / Total Prem',sec:'v4b'},
+
   // ── Coverages — Bodily Injury ────────────────────────────────────────────
   // VERIFIED via labeled PDF: Text179=BI per person (x141 y≈387), Text180=BI per accident (x271)
   // Text181=v1 prem (x399), Text182=v2 prem (x449)
@@ -222,38 +240,48 @@ const FM = {
   biPerAcc:       {id:'F[0].P1[0].Text180[0]', lbl:'BI Per Accident Limit',    sec:'bi'},
   biV1Prem:       {id:'F[0].P1[0].Text181[0]', lbl:'BI Veh 1 Premium',         sec:'bi'},
   biV2Prem:       {id:'F[0].P1[0].Text182[0]', lbl:'BI Veh 2 Premium',         sec:'bi'},
+  biV3Prem:       {id:'F[0].P1[0].Text177[0]', lbl:'BI Veh 3 Premium',         sec:'bi'},
+  biV4Prem:       {id:'F[0].P1[0].Text178[0]', lbl:'BI Veh 4 Premium',         sec:'bi'},
 
   // ── Coverages — Property Damage ──────────────────────────────────────────
-  // VERIFIED: Text185=PD limit (x141 y≈375), Text186=v1 prem (x399), Text187=v2 prem (x449)
   pdLimit:        {id:'F[0].P1[0].Text185[0]', lbl:'PD Limit',                 sec:'pd'},
   pdV1Prem:       {id:'F[0].P1[0].Text186[0]', lbl:'PD Veh 1 Premium',         sec:'pd'},
   pdV2Prem:       {id:'F[0].P1[0].Text187[0]', lbl:'PD Veh 2 Premium',         sec:'pd'},
+  pdV3Prem:       {id:'F[0].P1[0].Text183[0]', lbl:'PD Veh 3 Premium',         sec:'pd'},
+  pdV4Prem:       {id:'F[0].P1[0].Text184[0]', lbl:'PD Veh 4 Premium',         sec:'pd'},
 
   // ── Coverages — PIP ──────────────────────────────────────────────────────
-  // PIP premium cells are at y≈340: Text190=v1 prem (x399), Text192=v2 prem (x449)
   pipV1Prem:      {id:'F[0].P1[0].Text190[0]', lbl:'PIP Veh 1 Premium',        sec:'pip'},
   pipV2Prem:      {id:'F[0].P1[0].Text192[0]', lbl:'PIP Veh 2 Premium',        sec:'pip'},
+  pipV3Prem:      {id:'F[0].P1[0].Text193[0]', lbl:'PIP Veh 3 Premium',        sec:'pip'},
+  pipV4Prem:      {id:'F[0].P1[0].Text194[0]', lbl:'PIP Veh 4 Premium',        sec:'pip'},
 
   // ── Coverages — Medical Payments ─────────────────────────────────────────
   medLimit:       {id:'F[0].P1[0].Text197[0]', lbl:'Med Pay Limit',            sec:'med'},
   medV1Prem:      {id:'F[0].P1[0].Text198[0]', lbl:'Med Pay Veh 1 Prem',       sec:'med'},
   medV2Prem:      {id:'F[0].P1[0].Text199[0]', lbl:'Med Pay Veh 2 Prem',       sec:'med'},
+  medV3Prem:      {id:'F[0].P1[0].Text200[0]', lbl:'Med Pay Veh 3 Prem',       sec:'med'},
+  medV4Prem:      {id:'F[0].P1[0].Text201[0]', lbl:'Med Pay Veh 4 Prem',       sec:'med'},
 
   // ── Coverages — Comprehensive / OTC ─────────────────────────────────────
-  // VERIFIED: Text209=ded veh1 (x149 y≈268), Text211=ded veh2 (x212)
-  // Text216=v1 prem (x399), Text217=v2 prem (x449)
   compDed1:       {id:'F[0].P1[0].Text209[0]', lbl:'Comp Ded Veh 1',           sec:'comp'},
   compDed2:       {id:'F[0].P1[0].Text211[0]', lbl:'Comp Ded Veh 2',           sec:'comp'},
+  compDed3:       {id:'F[0].P1[0].Text213[0]', lbl:'Comp Ded Veh 3',           sec:'comp'},
+  compDed4:       {id:'F[0].P1[0].Text215[0]', lbl:'Comp Ded Veh 4',           sec:'comp'},
   compV1Prem:     {id:'F[0].P1[0].Text216[0]', lbl:'Comp Veh 1 Premium',       sec:'comp'},
   compV2Prem:     {id:'F[0].P1[0].Text217[0]', lbl:'Comp Veh 2 Premium',       sec:'comp'},
+  compV3Prem:     {id:'F[0].P1[0].Text218[0]', lbl:'Comp Veh 3 Premium',       sec:'comp'},
+  compV4Prem:     {id:'F[0].P1[0].Text219[0]', lbl:'Comp Veh 4 Premium',       sec:'comp'},
 
   // ── Coverages — Collision ────────────────────────────────────────────────
-  // VERIFIED: Text221=ded veh1 (x149 y≈257), Text223=ded veh2 (x212)
-  // Text228=v1 prem (x399), Text229=v2 prem (x449)
   collDed1:       {id:'F[0].P1[0].Text221[0]', lbl:'Coll Ded Veh 1',           sec:'coll'},
   collDed2:       {id:'F[0].P1[0].Text223[0]', lbl:'Coll Ded Veh 2',           sec:'coll'},
+  collDed3:       {id:'F[0].P1[0].Text225[0]', lbl:'Coll Ded Veh 3',           sec:'coll'},
+  collDed4:       {id:'F[0].P1[0].Text227[0]', lbl:'Coll Ded Veh 4',           sec:'coll'},
   collV1Prem:     {id:'F[0].P1[0].Text228[0]', lbl:'Coll Veh 1 Premium',       sec:'coll'},
   collV2Prem:     {id:'F[0].P1[0].Text229[0]', lbl:'Coll Veh 2 Premium',       sec:'coll'},
+  collV3Prem:     {id:'F[0].P1[0].Text230[0]', lbl:'Coll Veh 3 Premium',       sec:'coll'},
+  collV4Prem:     {id:'F[0].P1[0].Text231[0]', lbl:'Coll Veh 4 Premium',       sec:'coll'},
 
   // ── Coverages — Trans Exp / Rental Reimb ────────────────────────────────
   // y≈209: Text273=v1 limit (x135), Text275=v2 limit (x237)
@@ -352,7 +380,10 @@ function parseDec(pages) {
   const vehRe = /Coverage detail for (\d{4}) ([^\n]+)/gi;
   const vehs = [];
   let vm;
-  while ((vm = vehRe.exec(full)) !== null) vehs.push({year:vm[1], make:vm[2].trim(), idx: vm.index});
+  while ((vm = vehRe.exec(full)) !== null) {
+    const makeRaw = vm[2].replace(/Coverage\b.*$/i, '').replace(/\s+/g,' ').trim();
+    vehs.push({year:vm[1], make:makeRaw, idx: vm.index});
+  }
 
   // VINs
   const vinRe = /\b([A-HJ-NPR-Z0-9]{17})\b/g;
@@ -378,6 +409,20 @@ function parseDec(pages) {
     d.v2Make = vehs[1].make.substring(0,20);
     d.v2Make2 = vehs[1].make.length>20 ? vehs[1].make.substring(20) : '';
     d.v2VIN = vehs[1].vin || '';
+  }
+  if (vehs[2]) {
+    d.v3Num = '03';
+    d.v3Year = vehs[2].year;
+    d.v3Make = vehs[2].make.substring(0,20);
+    d.v3Make2 = vehs[2].make.length>20 ? vehs[2].make.substring(20) : '';
+    d.v3VIN = vehs[2].vin || '';
+  }
+  if (vehs[3]) {
+    d.v4Num = '04';
+    d.v4Year = vehs[3].year;
+    d.v4Make = vehs[3].make.substring(0,20);
+    d.v4Make2 = vehs[3].make.length>20 ? vehs[3].make.substring(20) : '';
+    d.v4VIN = vehs[3].vin || '';
   }
 
   // Per-vehicle coverage extraction
@@ -413,26 +458,24 @@ function parseDec(pages) {
 
   if (vehs[0]) {
     const b1 = extractVehBlock(vehs[0].year, vehs[0].make);
-    // BI limit — per person and per accident
+    // BI limit — use per-vehicle block to get accurate Bodily Injury limits,
+    // which avoids matching PIP Death Benefit "$5,000 each person"
     if (!d.biLimit) {
-      const biM = full.match(/\$(\d[\d,]+)\s+each person/i);
-      if (biM) d.biLimit = '$' + biM[1];
+      // Match "Bodily Injury" (possibly with bullet "•") then immediately "$X each person"
+      const m = b1.match(/Bodily Injury[\s•]+\$([\d,]+)\s+each person/i);
+      if (m) d.biLimit = '$' + m[1];
     }
     if (!d.biPerAcc) {
-      const biAccM = full.match(/\$(\d[\d,]+)\s+each (?:accident|occurrence)[\s\S]{0,30}(?:Bodily|BI)/i)
-        || full.match(/(?:Bodily|BI)[\s\S]{0,80}\$(\d[\d,]+)\s+each (?:accident|occurrence)/i);
-      if (biAccM) d.biPerAcc = '$' + biAccM[1];
+      const m = b1.match(/Bodily Injury[\s\S]{0,120}?\$([\d,]+)\s+each occurrence/i);
+      if (m) d.biPerAcc = '$' + m[1];
       else if (d.biLimit) {
-        // Common FL split: if per person is 100k, per accident is typically 300k
         const commonMap = {'$100,000':'$300,000','$50,000':'$100,000','$250,000':'$500,000','$300,000':'$500,000'};
         d.biPerAcc = commonMap[d.biLimit] || '';
       }
     }
     if (!d.pdLimit) {
-      // PD uses "each occurrence" — find it separately from BI
-      const pdM = full.match(/Property Damage[\s\S]{0,150}?\$(\d[\d,]+)\s+each occurrence/i)
-        || full.match(/\$(\d{2,3},\d{3})\s+each occurrence[\s\S]{0,50}Property Damage/i);
-      if (pdM) d.pdLimit = '$' + pdM[1];
+      const m = b1.match(/Property Damage[\s•]+\$([\d,]+)\s+each occurrence/i);
+      if (m) d.pdLimit = '$' + m[1];
     }
     d.biV1Prem = parsePrem(b1, 'Bodily Injury');
     d.pdV1Prem = parsePrem(b1, 'Property Damage');
@@ -477,6 +520,22 @@ function parseDec(pages) {
       return m ? m[1].replace(/,/g,'') : '';
     })();
   }
+
+  function fillVeh(b, num) {
+    const bp = parsePrem(b, 'Bodily Injury'); if (bp) d['biV'+num+'Prem'] = bp;
+    const pp = parsePrem(b, 'Property Damage'); if (pp) d['pdV'+num+'Prem'] = pp;
+    const piP = parsePrem(b, 'Personal Injury Protection'); if (piP) d['pipV'+num+'Prem'] = piP;
+    const cDed = parseDed(b, 'Comprehensive'); if (cDed) d['compDed'+num] = cDed;
+    const cPM = b.match(/Auto Comprehensive Insurance\s+Actual cash value\s+\$[\d,]+\s+([\d.]+)/i);
+    if (cPM) d['compV'+num+'Prem'] = cPM[1];
+    const lDed = parseDed(b, 'Collision'); if (lDed) d['collDed'+num] = lDed;
+    const lPM = b.match(/Auto Collision Insurance\s+Actual cash value\s+\$[\d,]+\s+([\d.]+)/i);
+    if (lPM) d['collV'+num+'Prem'] = lPM[1];
+    const tM = b.match(/Total premium for[\s\S]{0,100}?\$([,\d]+\.\d{2})/i);
+    if (tM) d['v'+num+'Class'] = tM[1].replace(/,/g,'');
+  }
+  if (vehs[2]) { const b3 = extractVehBlock(vehs[2].year, vehs[2].make); fillVeh(b3, 3); }
+  if (vehs[3]) { const b4 = extractVehBlock(vehs[3].year, vehs[3].make); fillVeh(b4, 4); }
 
   // Grand total
   const gtM = full.match(/[Ii]f you pay in installments[^$]*\$([\d,]+\.\d{2})/i)
@@ -546,14 +605,16 @@ function renderLeft(data) {
     {label:'Veh 1 Stats', keys:['v1CostNew','v1AnnMiles','v1Class']},
     {label:'Veh 2 Info', keys:['v2Num','v2Year','v2Make','v2Make2','v2VIN','v2HPCC','v2DatePurch']},
     {label:'Veh 2 Stats', keys:['v2CostNew','v2AnnMiles','v2Class']},
+    {label:'Veh 3 Info', keys:['v3Num','v3Year','v3Make','v3Make2','v3VIN','v3Class']},
+    {label:'Veh 4 Info', keys:['v4Num','v4Year','v4Make','v4Make2','v4VIN','v4Class']},
   ]);
   document.getElementById('s-veh').style.display='';
 
   // Coverages
   makeTabs('t-cov','p-cov',[
-    {label:'BI', keys:['biLimit','biPerAcc','biV1Prem','biV2Prem']},
-    {label:'PD', keys:['pdLimit','pdV1Prem','pdV2Prem']},
-    {label:'PIP', keys:['pipV1Prem','pipV2Prem']},
+    {label:'BI', keys:['biLimit','biPerAcc','biV1Prem','biV2Prem','biV3Prem','biV4Prem']},
+    {label:'PD', keys:['pdLimit','pdV1Prem','pdV2Prem','pdV3Prem','pdV4Prem']},
+    {label:'PIP', keys:['pipV1Prem','pipV2Prem','pipV3Prem','pipV4Prem']},
     {label:'Comp', keys:['compDed1','compDed2','compV1Prem','compV2Prem']},
     {label:'Coll', keys:['collDed1','collDed2','collV1Prem','collV2Prem']},
     {label:'Trans', keys:['transV1Limit','transV2Limit','transV1Prem','transV2Prem']},
